@@ -1,0 +1,17 @@
+name: 'AutoReview by OpenAI'
+description: 'This action is an action that uses OpenAI to perform an auto-review.'
+inputs:
+  api-key:
+    description: >
+      OpenAI の API キーを指定します。
+    required: true
+outputs:
+  review:
+    description: >
+      オートレビューの結果を出力します。
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
+branding:
+  icon: "box"
+  color: "orange"
