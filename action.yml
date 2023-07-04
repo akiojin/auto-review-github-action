@@ -5,6 +5,11 @@ inputs:
     description: >
       OpenAI の API キーを指定します。
     required: true
+  base-sha:
+    description: >
+      ベースとなるコミットの SHA を指定します。
+    required: true
+    default: ${{ github.event.pull_request.base.sha }}
 outputs:
   review:
     description: >
