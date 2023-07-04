@@ -13,6 +13,3 @@ jobs:
         with:
           node-version: 16
       - run: npm run build
-      - uses: ./
-        with:
-          api-key: ${{ secrets.API_KEY }}
