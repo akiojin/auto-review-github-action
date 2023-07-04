@@ -42,7 +42,7 @@ async function Run()
         }
 
         await exec.exec('git', ['fetch', 'origin', `${core.getInput('base-sha')}:BASE`])
-        await exec.exec('git', ['diff', 'BASE', 'HEAD'], options)
+        await exec.exec('git', ['diff', '--diff-filter=M', 'BASE', 'HEAD'], options)
 
         const response = await openai.createChatCompletion({
             model: 'gpt-4',
