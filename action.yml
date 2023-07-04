@@ -1,7 +1,7 @@
 name: 'AutoReview by OpenAI'
 description: 'This action is an action that uses OpenAI to perform an auto-review.'
 inputs:
-  api-key:
+  openai-api-key:
     description: >
       OpenAI の API キーを指定します。
     required: true
@@ -10,6 +10,16 @@ inputs:
       ベースとなるコミットの SHA を指定します。
     required: true
     default: ${{ github.event.pull_request.base.sha }}
+  token:
+    description: >
+      GitHub のトークンを指定します。
+    required: true
+    default: ${{ github.token }}
+  pull-request-url:
+    description: >
+      プルリクエストの URL を指定します。
+    required: true
+    default: ${{ github.event.pull_request.html_url }}
 outputs:
   review:
     description: >
