@@ -10,7 +10,7 @@ inputs:
       ベースとなるコミットの SHA を指定します。
     required: true
     default: ${{ github.event.pull_request.base.sha }}
-  token:
+  github-token:
     description: >
       GitHub のトークンを指定します。
     required: true

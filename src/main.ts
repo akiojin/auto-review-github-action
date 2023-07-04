@@ -1,5 +1,7 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
+import * as tmp from 'tmp'
+import * as fs from 'fs/promises'
 import { Configuration, OpenAIApi } from "openai";
 
 async function Run()
@@ -17,7 +19,7 @@ async function Run()
         # 実行する内容
         上記の内容から、以下の点を実行してください。
         - 修正前と修正後の差分から、更新内容の概要説明
-        - 修正後のソースコードの改善点を説明
+        - 修正後の改善点のレビューを実施
         # 制約事項
         説明の際には以下の点を必ず考慮してください。
         - Markdown形式で出力してください。
@@ -51,7 +53,16 @@ async function Run()
         });
         
         const answer = response.data.choices[0].message?.content;
-        console.log(answer);
+
+        if (!answer) {
+            throw new Error('Failed to get answer')
+        }
+
+        const body = tmp.tmpNameSync()
+        await fs.writeFile(body, answer, 'base64')
+      
+        process.env.GITHUB_TOKEN = core.getInput('github-token')
+        await exec.exec('gh', ['pr', 'comment', '--body-file', body, `"${core.getInput('pull-request-url')}"`])
     } catch (ex: any) {
         core.setFailed(ex.message)
     }
