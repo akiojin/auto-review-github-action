@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import * as exec from '@actions/exec'
+//import * as exec from '@actions/exec'
 import { Configuration, OpenAIApi } from "openai";
 
 async function Run()
@@ -30,7 +30,7 @@ async function Run()
         - 改善点については自由に回答してください。
         `
 
-        let output: string = ''
+/*        let output: string = ''
         const options: exec.ExecOptions = {
           listeners: {
             stdout: (data: Buffer) => {
@@ -39,7 +39,7 @@ async function Run()
           }
         }
       
-        await exec.exec('git', ['diff', 'HEAD', core.getInput('base-sha')], options)
+        await exec.exec('git', ['diff', 'HEAD', core.getInput('base-sha')], options)*/
       
         const test = `
         diff --git a/_after.txt b/_after.txt
