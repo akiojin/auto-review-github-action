@@ -20,4 +20,4 @@ jobs:
       - run: npm run build
       - uses: ./
         with:
-          openai-api-key: ${{ secrets.API_KEY }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
