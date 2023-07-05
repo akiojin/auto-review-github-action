@@ -15531,7 +15531,7 @@ async function Exec(command, args) {
 }
 async function GetFileDiff(file, base) {
     const result = await Exec('git', ['diff', base, 'HEAD', '--', file]);
-    core.startGroup(`Diff ${file}`);
+    core.startGroup('Diff');
     core.info(result);
     core.endGroup();
     return result;
@@ -15574,11 +15574,9 @@ async function Run() {
             - 1つのリストアイテムには1つの更新内容を出力してください。
         - 改善点については自由に回答してください。
         `;
-        await exec.exec('git', ['fetch', 'origin', `${core.getInput('base-sha')}:BASE`]);
-        const diff = await GetAllFileDiff('BASE', core.getInput('target').split(','));
-        core.startGroup('Diff');
-        core.info(diff);
-        core.endGroup();
+        const baseSHA = core.getInput('base-sha');
+        await exec.exec('git', ['fetch', 'origin', baseSHA]);
+        const diff = await GetAllFileDiff(baseSHA, core.getInput('target').split(','));
         const response = await openai.createChatCompletion({
             model: 'gpt-4',
             messages: [
