@@ -8,11 +8,15 @@ async function Exec(command: string, args: string[]): Promise<string>
 {
     let output = ''
 
-    await exec.exec(command, args, {
-        listeners: {
-            stdout: (data: Buffer) => output += data.toString()
+    const options: exec.ExecOptions = {
+      listeners: {
+        stdout: (data: Buffer) => {
+          output += data.toString()
         }
-    })
+      }
+    }
+
+    await exec.exec(command, args, options)
 
     return output
 }

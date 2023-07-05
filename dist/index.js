@@ -15522,11 +15522,14 @@ const fs = __importStar(__nccwpck_require__(3292));
 const openai_1 = __nccwpck_require__(9211);
 async function Exec(command, args) {
     let output = '';
-    await exec.exec(command, args, {
+    const options = {
         listeners: {
-            stdout: (data) => output += data.toString()
+            stdout: (data) => {
+                output += data.toString();
+            }
         }
-    });
+    };
+    await exec.exec(command, args, options);
     return output;
 }
 async function GetFileDiff(file, base) {
