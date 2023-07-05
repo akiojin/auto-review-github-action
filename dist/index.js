@@ -15530,8 +15530,8 @@ async function Exec(command, args) {
     return output;
 }
 async function GetFileDiff(file, base) {
+    core.startGroup(`Diff ${file}`);
     const result = await Exec('git', ['diff', base, 'HEAD', '--', file]);
-    core.startGroup('Diff');
     core.info(result);
     core.endGroup();
     return result;

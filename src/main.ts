@@ -19,9 +19,10 @@ async function Exec(command: string, args: string[]): Promise<string>
 
 async function GetFileDiff(file: string, base: string): Promise<string>
 {
+    core.startGroup(`Diff ${file}`)
+
     const result = await Exec('git', ['diff', base, 'HEAD', '--', file])
 
-    core.startGroup('Diff')
     core.info(result)
     core.endGroup()
 
