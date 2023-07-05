@@ -15585,7 +15585,7 @@ async function Run() {
         const body = tmp.tmpNameSync();
         await fs.writeFile(body, answer, 'base64');
         process.env.GITHUB_TOKEN = core.getInput('github-token');
-        await exec.exec('gh', ['pr', 'comment', '--body-file', body, `"${core.getInput('pull-request-url')}"`]);
+        await exec.exec('gh', ['pr', 'comment', '--body-file', body, core.getInput('pull-request-url')]);
     }
     catch (ex) {
         core.setFailed(ex.message);
