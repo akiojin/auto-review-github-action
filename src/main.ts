@@ -84,7 +84,7 @@ async function Run()
         `
 
         const baseSHA = core.getInput('base-sha')
-        await exec.exec('git', ['fetch', 'origin', baseSHA])
+        await Exec('git', ['fetch', 'origin', baseSHA])
         const diff = await GetAllFileDiff(baseSHA, core.getInput('target').split(','))
 
         const response = await openai.createChatCompletion({
