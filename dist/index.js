@@ -15520,6 +15520,31 @@ const exec = __importStar(__nccwpck_require__(1514));
 const tmp = __importStar(__nccwpck_require__(8517));
 const fs = __importStar(__nccwpck_require__(3292));
 const openai_1 = __nccwpck_require__(9211);
+async function Exec(command, args) {
+    let output = '';
+    await exec.exec(command, args, {
+        listeners: {
+            stdout: (data) => output += data.toString()
+        }
+    });
+    return output;
+}
+async function GetFileDiff(file, base) {
+    return await Exec('git', ['diff', base, 'HEAD', '--', file]);
+}
+async function GetAllFileDiff(base, extensions) {
+    const result = await Exec('git', ['diff', '--diff-filter=M', '--name-only', base, 'HEAD']);
+    const pattern = `\\(${extensions.map(ext => `\\.${ext}`).join('|')}})$`;
+    const match = result.match(new RegExp(pattern, 'gm'));
+    if (!match) {
+        throw new Error(`Not found. Match Pattern="${pattern}"`);
+    }
+    let diff = '';
+    match.forEach(async (file, _) => {
+        await GetFileDiff(file, base).then(data => diff += data.toString());
+    });
+    return diff;
+}
 async function Run() {
     try {
         const configuration = new openai_1.Configuration({
@@ -15544,16 +15569,8 @@ async function Run() {
             - 1つのリストアイテムには1つの更新内容を出力してください。
         - 改善点については自由に回答してください。
         `;
-        let diff = '';
-        const options = {
-            listeners: {
-                stdout: (data) => {
-                    diff += data.toString();
-                }
-            }
-        };
         await exec.exec('git', ['fetch', 'origin', `${core.getInput('base-sha')}:BASE`]);
-        await exec.exec('git', ['diff', '--diff-filter=M', 'BASE', 'HEAD'], options);
+        const diff = await GetAllFileDiff('BASE', ['ts', 'yml']);
         const response = await openai.createChatCompletion({
             model: 'gpt-4',
             messages: [

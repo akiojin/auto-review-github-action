@@ -4,6 +4,43 @@ import * as tmp from 'tmp'
 import * as fs from 'fs/promises'
 import { Configuration, OpenAIApi } from "openai";
 
+async function Exec(command: string, args: string[]): Promise<string>
+{
+    let output = ''
+
+    await exec.exec(command, args, {
+        listeners: {
+            stdout: (data: Buffer) => output += data.toString()
+        }
+    })
+
+    return output
+}
+
+async function GetFileDiff(file: string, base: string): Promise<string>
+{
+    return await Exec('git', ['diff', base, 'HEAD', '--', file])
+}
+
+async function GetAllFileDiff(base: string, extensions: string[]): Promise<string>
+{
+    const result = await Exec('git', ['diff', '--diff-filter=M', '--name-only', base, 'HEAD'])
+
+    const pattern = `\\(${extensions.map(ext => `\\.${ext}`).join('|')}})$`
+    const match = result.match(new RegExp(pattern, 'gm'))
+
+    if (!match) {
+        throw new Error(`Not found. Match Pattern="${pattern}"`)
+    }
+
+    let diff = ''
+    match.forEach(async (file, _) => {
+        await GetFileDiff(file, base).then(data => diff += data.toString())
+    })
+
+    return diff
+}
+
 async function Run()
 {
     try {
@@ -32,17 +69,8 @@ async function Run()
         - 改善点については自由に回答してください。
         `
 
-        let diff: string = ''
-        const options: exec.ExecOptions = {
-          listeners: {
-            stdout: (data: Buffer) => {
-              diff += data.toString()
-            }
-          }
-        }
-
         await exec.exec('git', ['fetch', 'origin', `${core.getInput('base-sha')}:BASE`])
-        await exec.exec('git', ['diff', '--diff-filter=M', 'BASE', 'HEAD'], options)
+        const diff = await GetAllFileDiff('BASE', ['ts', 'yml'])
 
         const response = await openai.createChatCompletion({
             model: 'gpt-4',
