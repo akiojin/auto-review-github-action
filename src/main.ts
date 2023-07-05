@@ -25,22 +25,12 @@ async function GetFileDiff(file: string, base: string): Promise<string>
 {
     core.startGroup(`Diff ${file}`)
 
-    let output = ''
+    const result = await Exec('git', ['diff', base, 'HEAD', '--', file])
 
-    const options: exec.ExecOptions = {
-        listeners: {
-            stdout: (data: Buffer) => {
-                output += data.toString()
-            }
-        }
-    }
-
-    await exec.exec('git', ['diff', base, 'HEAD', '--', file], options)
-
-    core.info(output)
+    core.info(result)
     core.endGroup()
 
-    return output;
+    return result;
 }
 
 async function GetAllFileDiff(base: string, extensions: string[]): Promise<string>
@@ -79,17 +69,22 @@ async function Run()
         # 実行する内容
         上記の内容から、以下の点を実行してください。
         - 修正前と修正後の差分から、更新内容の概要説明
-        - 修正後の改善点のレビューを実施
+        - 修正後の内容で、より良くするための改善案を提案
         # 制約事項
         説明の際には以下の点を必ず考慮してください。
         - Markdown形式で出力してください。
         - 日本語で出力してください。
-        - 複数のファイルの変更点がある場合は、ファイル単位で出力してください。
+        - 出力は「更新内容の概要説明」と「改善の提案」を見出しとしてください。
         - 更新内容の概要説明
-            - 更新内容の概要説明では、先頭に「更新内容の概要は以下のとおりです。」としてください。
+            - 複数のファイルの変更点がある場合は、ファイル単位で出力してください。
+            = ファイル単位で見出しをつけてください。
             - リスト形式で更新内容を出力してください。
             - 1つのリストアイテムには1つの更新内容を出力してください。
-        - 改善点については自由に回答してください。
+        - 改善の提案
+            - 複数のファイルの変更点がある場合は、ファイル単位で出力してください。
+            = ファイル単位で見出しをつけてください。
+            - リスト形式で更新内容を出力してください。
+            - 1つのリストアイテムには1つの改善提案を出力してください。
         `
 
         const baseSHA = core.getInput('base-sha')
