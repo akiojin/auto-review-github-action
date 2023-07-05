@@ -15540,9 +15540,11 @@ async function GetFileDiff(file, base) {
     return result;
 }
 async function GetAllFileDiff(base, extensions) {
+    core.startGroup('Extracting Difference Files');
     const result = await Exec('git', ['diff', '--diff-filter=M', '--name-only', base, 'HEAD']);
     const pattern = `(${extensions.map(ext => `^.*\\.${ext}`).join('|')})$`;
     const match = result.match(new RegExp(pattern, 'gm'));
+    core.endGroup();
     if (!match) {
         throw new Error(`Not found. Match Pattern="${pattern}"`);
     }
@@ -15560,27 +15562,22 @@ async function Run() {
         });
         const openai = new openai_1.OpenAIApi(configuration);
         const system = `
-        # 入力情報
-        - git diffコマンドの実行結果
-        # 実行する内容
-        上記の内容から、以下の点を実行してください。
-        - 修正前と修正後の差分から、更新内容の概要説明
-        - 修正後の内容で、より良くするための改善案を提案
-        # 制約事項
-        説明の際には以下の点を必ず考慮してください。
-        - Markdown形式で出力してください。
-        - 日本語で出力してください。
-        - 出力は「更新内容の概要説明」と「改善の提案」を見出しとしてください。
-        - 更新内容の概要説明
-            - 複数のファイルの変更点がある場合は、ファイル単位で出力してください。
-            = ファイル単位で見出しをつけてください。
-            - リスト形式で更新内容を出力してください。
-            - 1つのリストアイテムには1つの更新内容を出力してください。
-        - 改善の提案
-            - 複数のファイルの変更点がある場合は、ファイル単位で出力してください。
-            = ファイル単位で見出しをつけてください。
-            - リスト形式で更新内容を出力してください。
-            - 1つのリストアイテムには1つの改善提案を出力してください。
+        # input
+        - Result of running git diff command
+        # What to do
+        In light of the above, we would like you to do the following
+        - Brief description of the update based on the differences between the before and after modifications
+        - Suggest improvements to make it better with the revised content.
+        # constraint
+        Consider the following points when explaining
+        - Please output in Markdown format.
+        - The language should be output by ${core.getInput('language')}.
+        - Output headings should be "Summary Description of Update" and "Suggestions for Improvement".
+        - Headings are output according to language.
+        - If there are changes in multiple files, output file by file.
+        = Headings should be attached to each file.
+        - The contents are output in list format.
+        - One list item outputs one content.
         `;
         const baseSHA = core.getInput('base-sha');
         await exec.exec('git', ['fetch', 'origin', baseSHA]);
@@ -15594,7 +15591,7 @@ async function Run() {
         });
         const answer = response.data.choices[0].message?.content;
         if (!answer) {
-            throw new Error('Failed to get answer');
+            throw new Error('No answer received from the OpenAI API.');
         }
         const body = tmp.tmpNameSync();
         await fs.writeFile(body, answer);
@@ -15602,6 +15599,7 @@ async function Run() {
         core.startGroup('GitHub CLI Comment');
         await exec.exec('gh', ['pr', 'comment', '--body-file', body, core.getInput('pull-request-url')]);
         core.endGroup();
+        core.setOutput('output', answer);
     }
     catch (ex) {
         core.setFailed(ex.message);
