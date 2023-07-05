@@ -3,31 +3,49 @@ description: 'This action is an action that uses OpenAI to perform an auto-revie
 inputs:
   openai-api-key:
     description: >
-      OpenAI の API キーを指定します。
+      Specify the API key for OpenAI.
     required: true
+  model:
+    description: >
+      Specifies the ChatGPT model to be used.
+      ex) gpt-4, gpt-3.5, gpt-3.5-turbo
+    required: false
+    default: gpt-4
   base-sha:
     description: >
-      ベースとなるコミットの SHA を指定します。
+      Specifies the SHA of the base commit.
+      By default, github.event.pull_request.base.sha is specified.
     required: true
     default: ${{ github.event.pull_request.base.sha }}
   github-token:
     description: >
-      GitHub のトークンを指定します。
+      Specify a GitHub token.
+      By default, github.token is specified.
     required: true
     default: ${{ github.token }}
   pull-request-url:
     description: >
-      プルリクエストの URL を指定します。
+      Specify the URL of the pull request.
+      By default, github.event.pull_request.html_url is specified.
     required: true
     default: ${{ github.event.pull_request.html_url }}
   target:
     description: >
-      レビュー対象のファイルを指定します。
+      Specify the extension of the file to be reviewed.
+      If there are multiple files, specify them separated by commas.
+      ex) md,txt,ts
     required: true
-outputs:
-  review:
+  language:
     description: >
-      オートレビューの結果を出力します。
+      Specify the language in which the comments will be written.
+      This value should be specified in plain language.
+      ex) 日本語
+    required: false
+    default: English
+outputs:
+  output:
+    description: >
+      Outputs the results of the auto-review.
 runs:
   using: 'node16'
   main: 'dist/index.js'

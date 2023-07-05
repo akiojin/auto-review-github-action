@@ -1,6 +1,6 @@
 {
   "name": "@akiojin/auto-review-github-action",
-  "version": "0.0.0",
+  "version": "0.1.1",
   "description": "This action is an action that uses OpenAI to perform an auto-review.",
   "main": "dist/index.js",
   "scripts": {
@@ -15,7 +15,10 @@
     "OpenAI",
     "AI",
     "ChatGPT",
-    "Review"
+    "Review",
+    "GitHub",
+    "Pull Request",
+    "PR"
   ],
   "author": "Akio Jinsenji <akio-jinsenji@cloud-creative-studios.com> (https://github.com/akiojin)",
   "license": "MIT",
