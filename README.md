@@ -19,6 +19,14 @@ A summary and suggestions for improvement will be posted in the pull request com
 
 In this example, the review is performed when there is an update to `*.ts` or `*.yml`.
 
+You must also add `write` permission to `pull_requests` in your permission settings.
+
+```yml
+permissions:
+  pull-requests: write
+  ...
+```
+
 ## Arguments
 
 | Name               | Required | Type     | Default                                     | Description                                                                                                                        |
