@@ -15570,7 +15570,7 @@ async function Run() {
         - 改善点については自由に回答してください。
         `;
         await exec.exec('git', ['fetch', 'origin', `${core.getInput('base-sha')}:BASE`]);
-        const diff = await GetAllFileDiff('BASE', ['ts', 'yml']);
+        const diff = await GetAllFileDiff('BASE', core.getInput('target').split(','));
         const response = await openai.createChatCompletion({
             model: 'gpt-4',
             messages: [

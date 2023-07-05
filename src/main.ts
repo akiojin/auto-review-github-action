@@ -70,7 +70,7 @@ async function Run()
         `
 
         await exec.exec('git', ['fetch', 'origin', `${core.getInput('base-sha')}:BASE`])
-        const diff = await GetAllFileDiff('BASE', ['ts', 'yml'])
+        const diff = await GetAllFileDiff('BASE', core.getInput('target').split(','))
 
         const response = await openai.createChatCompletion({
             model: 'gpt-4',
@@ -79,7 +79,7 @@ async function Run()
                 { role: 'user', content: diff }
             ],
         });
-        
+
         const answer = response.data.choices[0].message?.content;
 
         if (!answer) {
@@ -88,7 +88,7 @@ async function Run()
 
         const body = tmp.tmpNameSync()
         await fs.writeFile(body, answer, 'base64')
-      
+
         process.env.GITHUB_TOKEN = core.getInput('github-token')
         await exec.exec('gh', ['pr', 'comment', '--body-file', body, `"${core.getInput('pull-request-url')}"`])
     } catch (ex: any) {
