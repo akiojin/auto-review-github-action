@@ -9,11 +9,11 @@ async function Exec(command: string, args: string[]): Promise<string>
     let output = ''
 
     const options: exec.ExecOptions = {
-      listeners: {
-        stdout: (data: Buffer) => {
-          output += data.toString()
+        listeners: {
+            stdout: (data: Buffer) => {
+                output += data.toString()
+            }
         }
-      }
     }
 
     await exec.exec(command, args, options)
@@ -25,12 +25,22 @@ async function GetFileDiff(file: string, base: string): Promise<string>
 {
     core.startGroup(`Diff ${file}`)
 
-    const result = await Exec('git', ['diff', base, 'HEAD', '--', file])
+    let output = ''
 
-    core.info(result)
+    const options: exec.ExecOptions = {
+        listeners: {
+            stdout: (data: Buffer) => {
+                output += data.toString()
+            }
+        }
+    }
+
+    await exec.exec('git', ['diff', base, 'HEAD', '--', file], options)
+
+    core.info(output)
     core.endGroup()
 
-    return result;
+    return output;
 }
 
 async function GetAllFileDiff(base: string, extensions: string[]): Promise<string>

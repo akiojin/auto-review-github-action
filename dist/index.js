@@ -15534,10 +15534,18 @@ async function Exec(command, args) {
 }
 async function GetFileDiff(file, base) {
     core.startGroup(`Diff ${file}`);
-    const result = await Exec('git', ['diff', base, 'HEAD', '--', file]);
-    core.info(result);
+    let output = '';
+    const options = {
+        listeners: {
+            stdout: (data) => {
+                output += data.toString();
+            }
+        }
+    };
+    await exec.exec('git', ['diff', base, 'HEAD', '--', file], options);
+    core.info(output);
     core.endGroup();
-    return result;
+    return output;
 }
 async function GetAllFileDiff(base, extensions) {
     const result = await Exec('git', ['diff', '--diff-filter=M', '--name-only', base, 'HEAD']);
