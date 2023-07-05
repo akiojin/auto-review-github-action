@@ -55,7 +55,7 @@ async function GetAllFileDiff(base: string, extensions: string[]): Promise<strin
     return diff
 }
 
-async function Run()
+async function Run(): Promise<void>
 {
     try {
         const configuration = new Configuration({
