@@ -19,12 +19,17 @@ async function Exec(command: string, args: string[]): Promise<string>
 
 async function GetFileDiff(file: string, base: string): Promise<string>
 {
-    return await Exec('git', ['diff', base, 'HEAD', '--', file])
+    const result = await Exec('git', ['diff', base, 'HEAD', '--', file])
+
+    core.startGroup(`Diff ${file}`)
+    core.info(result)
+    core.endGroup()
+
+    return result;
 }
 
 async function GetAllFileDiff(base: string, extensions: string[]): Promise<string>
 {
-    core.startGroup('Get All File Diff')
     const result = await Exec('git', ['diff', '--diff-filter=M', '--name-only', base, 'HEAD'])
 
     const pattern = `(${extensions.map(ext => `^.*\\.${ext}`).join('|')})$`
@@ -40,9 +45,6 @@ async function GetAllFileDiff(base: string, extensions: string[]): Promise<strin
         diff += data.toString()
     })
 
-    core.info(diff)
-
-    core.endGroup()
     return diff
 }
 
@@ -99,7 +101,10 @@ async function Run()
         await fs.writeFile(body, answer)
 
         process.env.GITHUB_TOKEN = core.getInput('github-token')
+
+        core.startGroup('GitHub CLI Comment')
         await exec.exec('gh', ['pr', 'comment', '--body-file', body, core.getInput('pull-request-url')])
+        core.endGroup()
     } catch (ex: any) {
         core.setFailed(ex.message)
     }

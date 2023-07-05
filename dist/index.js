@@ -15530,10 +15530,13 @@ async function Exec(command, args) {
     return output;
 }
 async function GetFileDiff(file, base) {
-    return await Exec('git', ['diff', base, 'HEAD', '--', file]);
+    const result = await Exec('git', ['diff', base, 'HEAD', '--', file]);
+    core.startGroup(`Diff ${file}`);
+    core.info(result);
+    core.endGroup();
+    return result;
 }
 async function GetAllFileDiff(base, extensions) {
-    core.startGroup('Get All File Diff');
     const result = await Exec('git', ['diff', '--diff-filter=M', '--name-only', base, 'HEAD']);
     const pattern = `(${extensions.map(ext => `^.*\\.${ext}`).join('|')})$`;
     const match = result.match(new RegExp(pattern, 'gm'));
@@ -15545,8 +15548,6 @@ async function GetAllFileDiff(base, extensions) {
         const data = await GetFileDiff(file, base);
         diff += data.toString();
     });
-    core.info(diff);
-    core.endGroup();
     return diff;
 }
 async function Run() {
@@ -15592,7 +15593,9 @@ async function Run() {
         const body = tmp.tmpNameSync();
         await fs.writeFile(body, answer);
         process.env.GITHUB_TOKEN = core.getInput('github-token');
+        core.startGroup('GitHub CLI Comment');
         await exec.exec('gh', ['pr', 'comment', '--body-file', body, core.getInput('pull-request-url')]);
+        core.endGroup();
     }
     catch (ex) {
         core.setFailed(ex.message);
