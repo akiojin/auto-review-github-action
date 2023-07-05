@@ -15541,8 +15541,10 @@ async function GetAllFileDiff(base, extensions) {
     }
     let diff = '';
     match.forEach(async (file, _) => {
-        await GetFileDiff(file, base).then(data => diff += data.toString());
+        const data = await GetFileDiff(file, base);
+        diff += data.toString();
     });
+    core.info(diff);
     return diff;
 }
 async function Run() {
