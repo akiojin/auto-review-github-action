@@ -55,10 +55,11 @@ async function GetAllFileDiff(base: string, extensions: string[]): Promise<strin
     }
 
     let diff = ''
-    match.forEach(async (file, _) => {
+
+    for await (const file of match) {
         const data = await GetFileDiff(file, base)
         diff += data.toString()
-    })
+    }
 
     return diff
 }

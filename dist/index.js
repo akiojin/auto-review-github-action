@@ -15555,10 +15555,10 @@ async function GetAllFileDiff(base, extensions) {
         throw new Error(`Not found. Match Pattern="${pattern}"`);
     }
     let diff = '';
-    match.forEach(async (file, _) => {
+    for await (const file of match) {
         const data = await GetFileDiff(file, base);
         diff += data.toString();
-    });
+    }
     return diff;
 }
 async function Run() {
