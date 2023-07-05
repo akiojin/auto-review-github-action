@@ -4,6 +4,14 @@ import * as tmp from 'tmp'
 import * as fs from 'fs/promises'
 import { Configuration, OpenAIApi } from "openai";
 
+class SkipException extends Error
+{
+    constructor(message: string)
+    {
+        super(message)
+    }
+}
+
 async function Exec(command: string, args: string[]): Promise<string>
 {
     let output = ''
@@ -42,7 +50,7 @@ async function GetAllFileDiff(base: string, extensions: string[]): Promise<strin
     core.endGroup()
 
     if (!match) {
-        throw new Error(`Not found. Match Pattern="${pattern}"`)
+        throw new SkipException(`Not found. Match Pattern="${pattern}"`)
     }
 
     let diff = ''
@@ -120,7 +128,11 @@ async function Run(): Promise<void>
 
         core.setOutput('output', answer)
     } catch (ex: any) {
-        core.setFailed(ex.message)
+        if (ex instanceof SkipException) {
+            core.info(ex.message)
+        } else {
+            core.setFailed(ex.message)
+        }
     }
 }
 

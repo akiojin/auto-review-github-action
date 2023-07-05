@@ -15520,6 +15520,11 @@ const exec = __importStar(__nccwpck_require__(1514));
 const tmp = __importStar(__nccwpck_require__(8517));
 const fs = __importStar(__nccwpck_require__(3292));
 const openai_1 = __nccwpck_require__(9211);
+class SkipException extends Error {
+    constructor(message) {
+        super(message);
+    }
+}
 async function Exec(command, args) {
     let output = '';
     const options = {
@@ -15546,7 +15551,7 @@ async function GetAllFileDiff(base, extensions) {
     const match = result.match(new RegExp(pattern, 'gm'));
     core.endGroup();
     if (!match) {
-        throw new Error(`Not found. Match Pattern="${pattern}"`);
+        throw new SkipException(`Not found. Match Pattern="${pattern}"`);
     }
     let diff = '';
     for await (const file of match) {
@@ -15608,7 +15613,12 @@ async function Run() {
         core.setOutput('output', answer);
     }
     catch (ex) {
-        core.setFailed(ex.message);
+        if (ex instanceof SkipException) {
+            core.info(ex.message);
+        }
+        else {
+            core.setFailed(ex.message);
+        }
     }
 }
 Run();
