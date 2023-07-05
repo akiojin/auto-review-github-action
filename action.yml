@@ -8,19 +8,19 @@ inputs:
   base-sha:
     description: >
       Specifies the SHA of the base commit.
-      By default, ${{ github.event.pull_request.base.sha }} is specified.
+      By default, github.event.pull_request.base.sha is specified.
     required: true
     default: ${{ github.event.pull_request.base.sha }}
   github-token:
     description: >
       Specify a GitHub token.
-      By default, ${{ github.token }} is specified.
+      By default, github.token is specified.
     required: true
     default: ${{ github.token }}
   pull-request-url:
     description: >
       Specify the URL of the pull request.
-      By default, ${{ github.event.pull_request.html_url }} is specified.
+      By default, github.event.pull_request.html_url is specified.
     required: true
     default: ${{ github.event.pull_request.html_url }}
   target:
