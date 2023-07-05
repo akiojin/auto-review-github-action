@@ -15569,11 +15569,11 @@ async function Run() {
         - Brief description of the update based on the differences between the before and after modifications
         - Suggest improvements to make it better with the revised content.
         # constraint
-        Consider the following points when explaining
+        The following points must be observed when explaining.
         - Please output in Markdown format.
         - The language should be output by ${core.getInput('language')}.
         - Output headings should be "Summary Description of Update" and "Suggestions for Improvement".
-        - Headings are output according to language.
+        - Headings are output by ${core.getInput('language')}.
         - If there are changes in multiple files, output file by file.
         = Headings should be attached to each file.
         - The contents are output in list format.

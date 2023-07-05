@@ -3,6 +3,10 @@
 This action is to respond to a pull request with a summary of the pull request and suggestions for improvement.
 This action requires an OpenAI API key.
 
+A summary and suggestions for improvement will be posted in the pull request comments as follows
+
+![Execute](ss5.png)
+
 ## Usage
 
 ```yml
