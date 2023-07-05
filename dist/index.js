@@ -15534,7 +15534,7 @@ async function GetFileDiff(file, base) {
 }
 async function GetAllFileDiff(base, extensions) {
     const result = await Exec('git', ['diff', '--diff-filter=M', '--name-only', base, 'HEAD']);
-    const pattern = `\\(${extensions.map(ext => `\\.${ext}`).join('|')}})$`;
+    const pattern = `(${extensions.map(ext => `\\.${ext}`).join('|')})$`;
     const match = result.match(new RegExp(pattern, 'gm'));
     if (!match) {
         throw new Error(`Not found. Match Pattern="${pattern}"`);

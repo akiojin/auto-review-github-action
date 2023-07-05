@@ -26,7 +26,7 @@ async function GetAllFileDiff(base: string, extensions: string[]): Promise<strin
 {
     const result = await Exec('git', ['diff', '--diff-filter=M', '--name-only', base, 'HEAD'])
 
-    const pattern = `\\(${extensions.map(ext => `\\.${ext}`).join('|')}})$`
+    const pattern = `(${extensions.map(ext => `\\.${ext}`).join('|')})$`
     const match = result.match(new RegExp(pattern, 'gm'))
 
     if (!match) {
