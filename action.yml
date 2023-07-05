@@ -9,7 +9,7 @@ inputs:
     description: >
       Specifies the ChatGPT model to be used.
       ex) gpt-4, gpt-3.5, gpt-3.5-turbo
-    required: false
+    required: true
     default: gpt-4
   base-sha:
     description: >
@@ -40,7 +40,7 @@ inputs:
       Specify the language in which the comments will be written.
       This value should be specified in plain language.
       ex) 日本語
-    required: false
+    required: true
     default: English
 outputs:
   output:
