@@ -15557,6 +15557,12 @@ async function GetAllFileDiff(base, extensions) {
 }
 async function Run() {
     try {
+        if (core.getInput('openai-api-key') === '') {
+            throw new Error('OpenAI API Key is not set.');
+        }
+        if (core.getInput('github-token') === '') {
+            throw new Error('GitHub Token is not set.');
+        }
         const configuration = new openai_1.Configuration({
             apiKey: core.getInput('openai-api-key'),
         });
