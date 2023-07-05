@@ -11,6 +11,7 @@ A summary and suggestions for improvement will be posted in the pull request com
 
 ```yml
 - uses: akiojin/auto-review-github-action@v0.1.0
+  if: github.event_name == 'pull_request'
   with:
     openai-api-key: ${{ secrets.OPENAI_API_KEY }}
     target: 'ts,yml'
