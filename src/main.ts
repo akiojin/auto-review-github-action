@@ -88,7 +88,7 @@ async function Run()
         const diff = await GetAllFileDiff(baseSHA, core.getInput('target').split(','))
 
         const response = await openai.createChatCompletion({
-            model: 'gpt-4',
+            model: core.getInput('model'),
             messages: [
                 { role: 'system', content: system },
                 { role: 'user', content: diff }

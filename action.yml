@@ -5,6 +5,12 @@ inputs:
     description: >
       Specify the API key for OpenAI.
     required: true
+  model:
+    description: >
+      Specifies the ChatGPT model to be used.
+      ex) gpt-4, gpt-3.5, gpt-3.5-turbo
+    required: false
+    default: gpt-4
   base-sha:
     description: >
       Specifies the SHA of the base commit.

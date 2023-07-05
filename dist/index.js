@@ -15583,7 +15583,7 @@ async function Run() {
         await Exec('git', ['fetch', 'origin', baseSHA]);
         const diff = await GetAllFileDiff(baseSHA, core.getInput('target').split(','));
         const response = await openai.createChatCompletion({
-            model: 'gpt-4',
+            model: core.getInput('model'),
             messages: [
                 { role: 'system', content: system },
                 { role: 'user', content: diff }
