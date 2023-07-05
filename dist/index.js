@@ -15583,7 +15583,7 @@ async function Run() {
             throw new Error('Failed to get answer');
         }
         const body = tmp.tmpNameSync();
-        await fs.writeFile(body, answer, 'base64');
+        await fs.writeFile(body, answer);
         process.env.GITHUB_TOKEN = core.getInput('github-token');
         await exec.exec('gh', ['pr', 'comment', '--body-file', body, core.getInput('pull-request-url')]);
     }
