@@ -10,7 +10,7 @@ inputs:
       ベースとなるコミットの SHA を指定します。
     required: true
     default: ${{ github.event.pull_request.base.sha }}
-  token:
+  github-token:
     description: >
       GitHub のトークンを指定します。
     required: true
@@ -20,6 +20,10 @@ inputs:
       プルリクエストの URL を指定します。
     required: true
     default: ${{ github.event.pull_request.html_url }}
+  target:
+    description: >
+      レビュー対象のファイルを指定します。
+    required: true
 outputs:
   review:
     description: >
