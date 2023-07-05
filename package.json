@@ -15,7 +15,10 @@
     "OpenAI",
     "AI",
     "ChatGPT",
-    "Review"
+    "Review",
+    "GitHub",
+    "Pull Request",
+    "PR"
   ],
   "author": "Akio Jinsenji <akio-jinsenji@cloud-creative-studios.com> (https://github.com/akiojin)",
   "license": "MIT",

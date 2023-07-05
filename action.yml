@@ -27,6 +27,7 @@ inputs:
     description: >
       Specify the extension of the file to be reviewed.
       If there are multiple files, specify them separated by commas.
+      ex) md,txt,ts
     required: true
   language:
     description: >
