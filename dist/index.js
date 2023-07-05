@@ -15533,6 +15533,7 @@ async function GetFileDiff(file, base) {
     return await Exec('git', ['diff', base, 'HEAD', '--', file]);
 }
 async function GetAllFileDiff(base, extensions) {
+    core.startGroup('Get All File Diff');
     const result = await Exec('git', ['diff', '--diff-filter=M', '--name-only', base, 'HEAD']);
     const pattern = `(${extensions.map(ext => `^.*\\.${ext}`).join('|')})$`;
     const match = result.match(new RegExp(pattern, 'gm'));
@@ -15545,6 +15546,7 @@ async function GetAllFileDiff(base, extensions) {
         diff += data.toString();
     });
     core.info(diff);
+    core.endGroup();
     return diff;
 }
 async function Run() {
@@ -15573,6 +15575,9 @@ async function Run() {
         `;
         await exec.exec('git', ['fetch', 'origin', `${core.getInput('base-sha')}:BASE`]);
         const diff = await GetAllFileDiff('BASE', core.getInput('target').split(','));
+        core.startGroup('Diff');
+        core.info(diff);
+        core.endGroup();
         const response = await openai.createChatCompletion({
             model: 'gpt-4',
             messages: [

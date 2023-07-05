@@ -24,6 +24,7 @@ async function GetFileDiff(file: string, base: string): Promise<string>
 
 async function GetAllFileDiff(base: string, extensions: string[]): Promise<string>
 {
+    core.startGroup('Get All File Diff')
     const result = await Exec('git', ['diff', '--diff-filter=M', '--name-only', base, 'HEAD'])
 
     const pattern = `(${extensions.map(ext => `^.*\\.${ext}`).join('|')})$`
@@ -40,6 +41,8 @@ async function GetAllFileDiff(base: string, extensions: string[]): Promise<strin
     })
 
     core.info(diff)
+
+    core.endGroup()
     return diff
 }
 
@@ -73,6 +76,10 @@ async function Run()
 
         await exec.exec('git', ['fetch', 'origin', `${core.getInput('base-sha')}:BASE`])
         const diff = await GetAllFileDiff('BASE', core.getInput('target').split(','))
+
+        core.startGroup('Diff')
+        core.info(diff)
+        core.endGroup()
 
         const response = await openai.createChatCompletion({
             model: 'gpt-4',
