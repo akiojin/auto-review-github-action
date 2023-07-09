@@ -80,8 +80,7 @@ async function Run(): Promise<void>
 
         const openai = new OpenAIApi(configuration)
 
-        const system = `
-        # input
+        const system = `# input
         - Result of running git diff command
         # What to do
         In light of the above, we would like you to do the following
@@ -96,8 +95,7 @@ async function Run(): Promise<void>
         - If there are changes in multiple files, output file by file.
         = Headings should be attached to each file.
         - The contents are output in list format.
-        - One list item outputs one content.
-        `
+        - One list item outputs one content.`
 
         const baseSHA = core.getInput('base-sha')
         await Exec('git', ['fetch', 'origin', baseSHA])
