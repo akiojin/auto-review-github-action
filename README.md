@@ -1,9 +1,9 @@
 # auto-review-github-action
 
-This action is to respond to a pull request with a summary of the pull request and suggestions for improvement.
+This action replies to a pull request with a summary of the pull request and suggestions for improvement using ChatGPT.
 This action requires an OpenAI API key.
 
-A summary and suggestions for improvement will be posted in the pull request comments as follows
+The pull request summary and suggestions for improvement will be posted in the pull request comments as follows
 
 ![Execute](ss5.png)
 
@@ -12,6 +12,7 @@ A summary and suggestions for improvement will be posted in the pull request com
 ```yml
 - uses: akiojin/auto-review-github-action@v0.1.0
   if: github.event_name == 'pull_request'
+  continue-on-error: true
   with:
     openai-api-key: ${{ secrets.OPENAI_API_KEY }}
     target: 'ts,yml'
@@ -38,6 +39,12 @@ permissions:
 | `pull-request-url` | `true`   | `string` | `${{ github.event.pull_request.html_url }}` | Specify the URL of the pull request. By default, `${{ github.event.pull_request.html_url }}` is specified.                         |
 | `target`           | `true`   | `string` |                                             | Specify the extension of the file to be reviewed. If there are multiple files, specify them separated by commas. ex) `'md,txt,ts'` |
 | `language`         | `true`   | `string` | `English`                                   | Specify the language in which the comments will be written. This value should be specified in plain language. ex) 日本語              |
+
+## Notes
+
+ChatGPT has a limit on the number of messages that can be sent at one time.
+Therefore, if there are significant changes, ChatGPT may return an error 400.
+In that case, review cannot be performed, so please use `continue-on-error: true` to allow the step to proceed even if an error occurs.
 
 ## How to create an API key for OpenAI
 
