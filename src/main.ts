@@ -89,7 +89,7 @@ async function Run(): Promise<void>
         # constraint
         The following points must be observed when explaining.
         - Please output in Markdown format.
-        - The language should be output by ${ core.getInput('language') }.
+        - Answers should be output in ${ core.getInput('language') }.
         - Output headings should be "Summary Description of Update" and "Suggestions for Improvement".
         - Headings are output by ${ core.getInput('language') }.
         - If there are changes in multiple files, output file by file.
