@@ -15572,22 +15572,36 @@ async function Run() {
             apiKey: core.getInput('openai-api-key'),
         });
         const openai = new openai_1.OpenAIApi(configuration);
-        const system = `# input
-        - Result of running git diff command
-        # What to do
-        In light of the above, we would like you to do the following
-        - Brief description of the update based on the differences between the before and after modifications
-        - Suggest improvements to make it better with the revised content.
-        # constraint
-        The following points must be observed when explaining.
-        - Please output in Markdown format.
-        - Answers should be output in ${core.getInput('language')}.
-        - Output headings should be "Summary Description of Update" and "Suggestions for Improvement".
-        - Headings are output by ${core.getInput('language')}.
-        - If there are changes in multiple files, output file by file.
-        = Headings should be attached to each file.
-        - The contents are output in list format.
-        - One list item outputs one content.`;
+        const system = `
+# input
+- Result of running git diff command
+# What to do
+We would like to request the following
+- A brief description of the updates based on the differences between the before and after revisions
+- Suggestions for improvements to make it better with the revisions
+# Restrictions
+The following points must be observed in the explanation.
+- All languages must be output in ${core.getInput('language')} when answering.
+- Output should be in Markdown format.
+- Refer to the output as described in [Output Format].
+
+[Output format]
+# Update Summary
+<Summary Description>
+## <file name(1)>
+- <Summary by file(1)>
+- <Summary by file(2)>
+## <file name(2)>
+- <Summary by file(1)>
+- <Summary by file(2)>
+
+# Suggestions for improvement
+## <file name(1)>
+- <Suggestions for Improvement (1)>
+- <Suggestions for Improvement (2)>
+## <file name(2)>
+- <Suggestions for Improvement(1)>
+- <Suggestions for Improvement(2)>`;
         const baseSHA = core.getInput('base-sha');
         await Exec('git', ['fetch', 'origin', baseSHA]);
         const diff = await GetAllFileDiff(baseSHA, core.getInput('target').split(','));
