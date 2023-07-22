@@ -9,6 +9,5 @@ git switch main
 git pull
 git merge develop
 npm version $1
-git commit
 git push
 git push --tags
