@@ -13,3 +13,4 @@ git push
 git push --tags
 git switch develop
 git merge main
+git push
