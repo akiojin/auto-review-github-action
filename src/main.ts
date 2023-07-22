@@ -4,6 +4,14 @@ import * as tmp from 'tmp'
 import * as fs from 'fs/promises'
 import { Configuration, OpenAIApi } from "openai";
 
+class SkipException extends Error
+{
+    constructor(message: string)
+    {
+        super(message)
+    }
+}
+
 async function Exec(command: string, args: string[]): Promise<string>
 {
     let output = ''
@@ -42,7 +50,7 @@ async function GetAllFileDiff(base: string, extensions: string[]): Promise<strin
     core.endGroup()
 
     if (!match) {
-        throw new Error(`Not found. Match Pattern="${pattern}"`)
+        throw new SkipException(`Not found. Match Pattern="${pattern}"`)
     }
 
     let diff = ''
@@ -58,6 +66,14 @@ async function GetAllFileDiff(base: string, extensions: string[]): Promise<strin
 async function Run(): Promise<void>
 {
     try {
+        if (core.getInput('openai-api-key') === '') {
+            throw new Error('OpenAI API Key is not set.')
+        }
+
+        if (core.getInput('github-token') === '') {
+            throw new Error('GitHub Token is not set.')
+        }
+
         const configuration = new Configuration({
             apiKey: core.getInput('openai-api-key'),
         })
@@ -65,23 +81,35 @@ async function Run(): Promise<void>
         const openai = new OpenAIApi(configuration)
 
         const system = `
-        # input
-        - Result of running git diff command
-        # What to do
-        In light of the above, we would like you to do the following
-        - Brief description of the update based on the differences between the before and after modifications
-        - Suggest improvements to make it better with the revised content.
-        # constraint
-        The following points must be observed when explaining.
-        - Please output in Markdown format.
-        - The language should be output by ${ core.getInput('language') }.
-        - Output headings should be "Summary Description of Update" and "Suggestions for Improvement".
-        - Headings are output by ${ core.getInput('language') }.
-        - If there are changes in multiple files, output file by file.
-        = Headings should be attached to each file.
-        - The contents are output in list format.
-        - One list item outputs one content.
-        `
+# input
+- Result of running git diff command
+# What to do
+We would like to request the following
+- A brief description of the updates based on the differences between the before and after revisions
+- Suggestions for improvements to make it better with the revisions
+# Restrictions
+The following points must be observed in the explanation.
+- All languages must be output in ${ core.getInput('language') } when answering.
+- Output should be in Markdown format.
+- Refer to the output as described in [Output Format].
+
+[Output format]
+# Update Summary
+<Summary Description>
+## <file name(1)>
+- <Summary by file(1)>
+- <Summary by file(2)>
+## <file name(2)>
+- <Summary by file(1)>
+- <Summary by file(2)>
+
+# Suggestions for improvement
+## <file name(1)>
+- <Suggestions for Improvement (1)>
+- <Suggestions for Improvement (2)>
+## <file name(2)>
+- <Suggestions for Improvement(1)>
+- <Suggestions for Improvement(2)>`
 
         const baseSHA = core.getInput('base-sha')
         await Exec('git', ['fetch', 'origin', baseSHA])
@@ -112,7 +140,11 @@ async function Run(): Promise<void>
 
         core.setOutput('output', answer)
     } catch (ex: any) {
-        core.setFailed(ex.message)
+        if (ex instanceof SkipException) {
+            core.info(ex.message)
+        } else {
+            core.setFailed(ex.message)
+        }
     }
 }
 

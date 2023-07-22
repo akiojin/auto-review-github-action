@@ -1,5 +1,5 @@
-name: 'AutoReview by OpenAI'
-description: 'This action is an action that uses OpenAI to perform an auto-review.'
+name: 'Auto Review by ChatGPT'
+description: 'This action is an action that uses ChatGPT to perform an auto-review.'
 inputs:
   openai-api-key:
     description: >
