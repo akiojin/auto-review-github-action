@@ -1,6 +1,6 @@
 {
   "name": "@akiojin/auto-review-github-action",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "This action is an action that uses OpenAI to perform an auto-review.",
   "main": "dist/index.js",
   "scripts": {
