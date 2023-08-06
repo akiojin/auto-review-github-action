@@ -10,7 +10,7 @@ The pull request summary and suggestions for improvement will be posted in the p
 ## Usage
 
 ```yml
-- uses: akiojin/auto-review-github-action@v0.1.0
+- uses: akiojin/auto-review-github-action@v1
   if: github.event_name == 'pull_request'
   continue-on-error: true
   with:
