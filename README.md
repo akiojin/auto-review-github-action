@@ -1,5 +1,7 @@
 # auto-review-github-action
 
+![Build][0] ![Test][1]
+
 This action replies to a pull request with a summary of the pull request and suggestions for improvement using ChatGPT.
 This action requires an OpenAI API key.
 
@@ -30,15 +32,17 @@ permissions:
 
 ## Arguments
 
-| Name               | Required | Type     | Default                                     | Description                                                                                                                        |
-| ------------------ | -------- | -------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `openai-api-key`   | `true`   | `string` |                                             | Specify the API key for OpenAI.                                                                                                    |
-| `model`            | `true`   | `string` | `gpt-3.5-turbo`                             | Specifies the ChatGPT model to be used. One of the following: `gpt-4`, `gpt-3.5`, `gpt-3.5-turbo`                                  |
-| `base-sha`         | `true`   | `string` | `${{ github.event.pull_request.base.sha }}` | Specifies the SHA of the base commit. By default, `${{ github.event.pull_request.base.sha }}` is specified.                        |
-| `github-token`     | `true`   | `string` | `${{ github.token }}`                       | Specify a GitHub token. By default, `${{ github.token }}` is specified.                                                            |
-| `pull-request-url` | `true`   | `string` | `${{ github.event.pull_request.html_url }}` | Specify the URL of the pull request. By default, `${{ github.event.pull_request.html_url }}` is specified.                         |
-| `target`           | `true`   | `string` |                                             | Specify the extension of the file to be reviewed. If there are multiple files, specify them separated by commas. ex) `'md,txt,ts'` |
-| `language`         | `true`   | `string` | `English`                                   | Specify the language in which the comments will be written. This value should be specified in plain language. ex) 日本語              |
+| Name               | Required | Type     | Default                                     | Description                                                                                                                                                                                      |
+| ------------------ | -------- | -------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `openai-api-key`   | `true`   | `string` |                                             | Specify the API key for OpenAI; for Azure OpenAI, specify the API key for Azure OpenAI.                                                                                                          |
+| `model`            | `false`  | `string` | `gpt-3.5-turbo`                             | Specifies the ChatGPT model to use; can be omitted if Azure OpenAI is used. Possible values are: `gpt-4`, `gpt-3.5`, `gpt-3.5-turbo`.                                                            |
+| `base-sha`         | `true`   | `string` | `${{ github.event.pull_request.base.sha }}` | Specifies the SHA of the base commit. By default, `${{ github.event.pull_request.base.sha }}` is specified.                                                                                      |
+| `github-token`     | `true`   | `string` | `${{ github.token }}`                       | Specify a GitHub token. By default, `${{ github.token }}` is specified.                                                                                                                          |
+| `pull-request-url` | `true`   | `string` | `${{ github.event.pull_request.html_url }}` | Specify the URL of the pull request. By default, `${{ github.event.pull_request.html_url }}` is specified.                                                                                       |
+| `target`           | `true`   | `string` |                                             | Specify the extension of the file to be reviewed. If there are multiple files, specify them separated by commas. ex) `'md,txt,ts'`                                                               |
+| `language`         | `true`   | `string` | `English`                                   | Specify the language in which the comments will be written. This value should be specified in plain language. ex) 日本語                                                                            |
+| `resource-name`    | `false`  | `string` |                                             | Specify the resource name when using Azure OpenAI.<br>The resource name corresponds to the <resource name> in the URL of the Azure OpenAI resource.<br>https://<resource name>.openai.azure.com/ |
+| `deployment-id`    | `false`  | `string` |                                             | Specify a deployment name when using Azure OpenAI.                                                                                                                                               |
 
 ## Notes
 
@@ -67,3 +71,8 @@ Copy the created API key.
 ![Copy API key](ss4.png)
 
 Set the copied API key to secret with an easy-to-understand name such as `OPENAI_API_KEY`.
+
+----
+
+[0]: https://github.com/akiojin/auto-review-github-action/actions/workflows/Build.yml/badge.svg
+[1]: https://github.com/akiojin/auto-review-github-action/actions/workflows/PR.yml/badge.svg
