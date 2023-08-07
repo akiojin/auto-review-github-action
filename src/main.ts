@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as tmp from 'tmp'
 import * as fs from 'fs/promises'
-import { Configuration, OpenAIApi } from "openai";
+import { OpenAIClient, AzureKeyCredential, OpenAIKeyCredential } from "@azure/openai";
 
 class SkipException extends Error
 {
@@ -63,6 +63,17 @@ async function GetAllFileDiff(base: string, extensions: string[]): Promise<strin
     return diff
 }
 
+function CreateOpenAIClient(resourceName?: string): OpenAIClient
+{
+    if (resourceName) {
+        return new OpenAIClient(
+            `https://${resourceName}.openai.azure.com/`,
+            new AzureKeyCredential(core.getInput('openai-api-key')))
+    } else {
+        return new OpenAIClient(new OpenAIKeyCredential(core.getInput('openai-api-key')));
+    }
+}
+
 async function Run(): Promise<void>
 {
     try {
@@ -74,11 +85,7 @@ async function Run(): Promise<void>
             throw new Error('GitHub Token is not set.')
         }
 
-        const configuration = new Configuration({
-            apiKey: core.getInput('openai-api-key'),
-        })
-
-        const openai = new OpenAIApi(configuration)
+        const client = CreateOpenAIClient(core.getInput('resource-name'))
 
         const system = `
 # input
@@ -115,15 +122,15 @@ The following points must be observed in the explanation.
         await Exec('git', ['fetch', 'origin', baseSHA])
         const diff = await GetAllFileDiff(baseSHA, core.getInput('target').split(','))
 
-        const response = await openai.createChatCompletion({
-            model: core.getInput('model'),
-            messages: [
-                { role: 'system', content: system },
-                { role: 'user', content: diff }
-            ],
-        });
+        const messages = [
+            { role: 'system', content: system },
+            { role: 'user', content: diff }
+        ]
 
-        const answer = response.data.choices[0].message?.content;
+        const result = await client.getChatCompletions(
+            core.getInput('deployment-id') || core.getInput('model'), messages)
+
+        const answer = result.choices[0].message?.content;
 
         if (!answer) {
             throw new Error('No answer received from the OpenAI API.')

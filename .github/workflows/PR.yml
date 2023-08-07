@@ -28,8 +28,19 @@ jobs:
         with:
           node-version: 16
       - run: npm run build
-      - uses: ./
+
+      - name: OpenAI Test
+        uses: ./
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           target: 'ts,yml'
+          language: ${{ matrix.LANGUAGE }}
+
+      - name: Azure OpenAI Test
+        uses: ./
+        with:
+          openai-api-key: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          target: 'ts,yml'
+          deployment-id: ${{ secrets.AZURE_OPENAI_DEPLOYMENT_ID }}
+          resource-name: ${{ secrets.AZURE_OPENAI_RESOURCE_NAME }}}
           language: ${{ matrix.LANGUAGE }}
