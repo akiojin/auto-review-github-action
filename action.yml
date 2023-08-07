@@ -1,5 +1,5 @@
-name: 'Auto Review by ChatGPT'
-description: 'This action is an action that uses ChatGPT to perform an auto-review.'
+name: 'Auto Review by OpenAI'
+description: 'This action is an automated review action using OpenAI or Azure OpenAI.'
 inputs:
   openai-api-key:
     description: >
@@ -44,11 +44,13 @@ inputs:
     default: English
   resource-name:
     description: >
-      Azure OpenAI resource name.
+      Specify the resource name when using Azure OpenAI.
+      The resource name corresponds to the <resource name> in the URL of the Azure OpenAI resource.
+      https://<resource name>.openai.azure.com/
     required: false
   deployment-id:
     description: >
-      Azure OpenAI deployment ID.
+      Specify a deployment name when using Azure OpenAI.
     required: false
 outputs:
   output:
