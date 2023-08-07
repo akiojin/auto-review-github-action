@@ -2,8 +2,12 @@
 
 ![Build][0] ![Test][1]
 
-This action replies to a pull request with a summary of the pull request and suggestions for improvement using ChatGPT.
+This action is an automated review action using OpenAI or Azure OpenAI.
+It replies to a pull request with a summary of the pull request and suggestions for improvement.
+
 This action requires an OpenAI API key.
+
+## Submission details
 
 The pull request summary and suggestions for improvement will be posted in the pull request comments as follows
 
