@@ -16491,9 +16491,11 @@ async function GetAllFileDiff(base, extensions) {
 }
 function CreateOpenAIClient(resourceName) {
     if (resourceName) {
+        core.info('Use Azure OpenAI API.');
         return new openai_1.OpenAIClient(`https://${resourceName}.openai.azure.com/`, new openai_1.AzureKeyCredential(core.getInput('openai-api-key')));
     }
     else {
+        core.info('Use OpenAI API.');
         return new openai_1.OpenAIClient(new openai_1.OpenAIKeyCredential(core.getInput('openai-api-key')));
     }
 }

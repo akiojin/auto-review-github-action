@@ -66,10 +66,12 @@ async function GetAllFileDiff(base: string, extensions: string[]): Promise<strin
 function CreateOpenAIClient(resourceName?: string): OpenAIClient
 {
     if (resourceName) {
+        core.info('Use Azure OpenAI API.')
         return new OpenAIClient(
             `https://${resourceName}.openai.azure.com/`,
             new AzureKeyCredential(core.getInput('openai-api-key')))
     } else {
+        core.info('Use OpenAI API.')
         return new OpenAIClient(new OpenAIKeyCredential(core.getInput('openai-api-key')));
     }
 }
