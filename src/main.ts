@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
+import * as github from '@actions/github'
 import * as tmp from 'tmp'
 import * as fs from 'fs/promises'
 import { OpenAIClient, AzureKeyCredential, OpenAIKeyCredential } from "@azure/openai";
@@ -29,11 +30,17 @@ async function Exec(command: string, args: string[]): Promise<string>
     return output
 }
 
-async function GetFileDiff(file: string, base: string): Promise<string>
+async function GetFileDiff(file: string): Promise<string>
 {
     core.startGroup(`Diff ${file}`)
 
-    const result = await Exec('git', ['diff', base, 'HEAD', '--', file])
+    let result = ''
+
+    if (github.context.payload.action == 'opened') {
+        result = await Exec('git', ['diff', github.context.payload.pull_request?.base.sha, 'HEAD', '--', file])
+    } else {
+        result = await Exec('git', ['diff', 'HEAD^..HEAD', '--', file])
+    }
 
     core.info(result)
     core.endGroup()
@@ -41,11 +48,19 @@ async function GetFileDiff(file: string, base: string): Promise<string>
     return result;
 }
 
-async function GetAllFileDiff(base: string, extensions: string[]): Promise<string>
+async function GetAllFileDiff(extensions: string[]): Promise<string>
 {
     core.startGroup('Extracting Difference Files')
-    const result = await Exec('git', ['diff', '--diff-filter=M', '--name-only', base, 'HEAD'])
-    const pattern = `(${extensions.map(ext => `^.*\\.${ext}`).join('|')})$`
+
+    let result = ''
+
+    if (github.context.payload.action == 'opened') {
+        result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', github.context.payload.pull_request?.base.sha, 'HEAD'])
+    } else {
+        result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', 'HEAD^..HEAD'])
+    }
+
+    const pattern = `(${extensions.map(ext => `^.*\\.${ext.trim()}`).join('|')})$`
     const match = result.match(new RegExp(pattern, 'gm'))
     core.endGroup()
 
@@ -56,7 +71,7 @@ async function GetAllFileDiff(base: string, extensions: string[]): Promise<strin
     let diff = ''
 
     for await (const file of match) {
-        const data = await GetFileDiff(file, base)
+        const data = await GetFileDiff(file)
         diff += data.toString()
     }
 
@@ -85,6 +100,18 @@ async function Run(): Promise<void>
 
         if (core.getInput('github-token') === '') {
             throw new Error('GitHub Token is not set.')
+        }
+
+        if (github.context.eventName != 'pull_request') {
+            throw new Error(`Unsupported event: ${github.context.eventName}`)
+        } else if (github.context.payload.action != 'opened' && github.context.payload.action != 'synchronize') {
+            throw new Error(`Unsupported action: ${github.context.payload.action}`)
+        }
+
+        if (github.context.payload.action == 'opened') {
+            core.info('Pull Request Opened.')
+        } else {
+            core.info('Pull Request Synchronized.')
         }
 
         const client = CreateOpenAIClient(core.getInput('resource-name'))
@@ -120,9 +147,15 @@ The following points must be observed in the explanation.
 - <Suggestions for Improvement(1)>
 - <Suggestions for Improvement(2)>`
 
-        const baseSHA = core.getInput('base-sha')
-        await Exec('git', ['fetch', 'origin', baseSHA])
-        const diff = await GetAllFileDiff(baseSHA, core.getInput('target').split(','))
+        core.startGroup('Git Update Status')
+        try {
+            await Exec('git', ['fetch', '--unshallow'])
+        } catch (ex) {
+            await Exec('git', ['fetch', '--depth', '2'])
+        }
+        core.endGroup()
+
+        const diff = await GetAllFileDiff(core.getInput('target').split(','))
 
         const messages = [
             { role: 'system', content: system },
