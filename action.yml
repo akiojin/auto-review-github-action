@@ -17,10 +17,6 @@ inputs:
       By default, github.event.pull_request.base.sha is specified.
     required: true
     default: ${{ github.event.pull_request.base.sha }}
-  github-event-name:
-    default: ${{ github.event_name }}
-  github-event:
-    default: ${{ github.event }}
   github-token:
     description: >
       Specify a GitHub token.
