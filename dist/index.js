@@ -16468,7 +16468,10 @@ async function Exec(command, args) {
 }
 async function GetFileDiff(file, base) {
     core.startGroup(`Diff ${file}`);
-    const result = await Exec('git', ['diff', base, 'HEAD', '--', file]);
+    //const result = await Exec('git', ['diff', base, 'HEAD', '--', file])
+    const result = await Exec('git', ['diff', 'HEAD^..HEAD']);
+    base = base.replace(/"/g, '');
+    //    github.context.payload.pull_request?.head.sha
     core.info(result);
     core.endGroup();
     return result;
@@ -16476,7 +16479,7 @@ async function GetFileDiff(file, base) {
 async function GetAllFileDiff(base, extensions) {
     core.startGroup('Extracting Difference Files');
     const result = await Exec('git', ['diff', '--diff-filter=M', '--name-only', base, 'HEAD']);
-    const pattern = `(${extensions.map(ext => `^.*\\.${ext}`).join('|')})$`;
+    const pattern = `(${extensions.map(ext => `^.*\\.${ext.trim()}`).join('|')})$`;
     const match = result.match(new RegExp(pattern, 'gm'));
     core.endGroup();
     if (!match) {
