@@ -23290,19 +23290,28 @@ async function Exec(command, args) {
     await exec.exec(command, args, options);
     return output;
 }
-async function GetFileDiff(file, base) {
+async function GetFileDiff(file) {
     core.startGroup(`Diff ${file}`);
-    //const result = await Exec('git', ['diff', base, 'HEAD', '--', file])
-    const result = await Exec('git', ['diff', 'HEAD^..HEAD', file]);
-    base = base.replace(/"/g, '');
-    core.info(`Context: ${JSON.stringify(github.context)}`);
+    let result = '';
+    if (github.context.payload.action == 'opened') {
+        result = await Exec('git', ['diff', github.context.payload.pull_request?.base.sha, 'HEAD', '--', file]);
+    }
+    else {
+        result = await Exec('git', ['diff', 'HEAD^..HEAD', file]);
+    }
     core.info(result);
     core.endGroup();
     return result;
 }
-async function GetAllFileDiff(base, extensions) {
+async function GetAllFileDiff(extensions) {
     core.startGroup('Extracting Difference Files');
-    const result = await Exec('git', ['diff', '--diff-filter=M', '--name-only', base, 'HEAD']);
+    let result = '';
+    if (github.context.payload.action == 'opened') {
+        result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', github.context.payload.pull_request?.base.sha, 'HEAD']);
+    }
+    else {
+        result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', 'HEAD^..HEAD']);
+    }
     const pattern = `(${extensions.map(ext => `^.*\\.${ext.trim()}`).join('|')})$`;
     const match = result.match(new RegExp(pattern, 'gm'));
     core.endGroup();
@@ -23311,7 +23320,7 @@ async function GetAllFileDiff(base, extensions) {
     }
     let diff = '';
     for await (const file of match) {
-        const data = await GetFileDiff(file, base);
+        const data = await GetFileDiff(file);
         diff += data.toString();
     }
     return diff;
@@ -23367,7 +23376,7 @@ The following points must be observed in the explanation.
 - <Suggestions for Improvement(2)>`;
         const baseSHA = core.getInput('base-sha');
         await Exec('git', ['fetch', 'origin', baseSHA]);
-        const diff = await GetAllFileDiff(baseSHA, core.getInput('target').split(','));
+        const diff = await GetAllFileDiff(core.getInput('target').split(','));
         const messages = [
             { role: 'system', content: system },
             { role: 'user', content: diff }
