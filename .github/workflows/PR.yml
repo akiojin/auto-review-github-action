@@ -23,6 +23,9 @@ jobs:
           - Français
 
     steps:
+      - run: |
+          echo ${{ toJson(github) }}
+
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
