@@ -23293,7 +23293,7 @@ async function Exec(command, args) {
 async function GetFileDiff(file) {
     core.startGroup(`Diff ${file}`);
     let result = '';
-    if (github.context.eventName == 'pull_request' && github.context.payload.action == 'opened') {
+    if (github.context.payload.action == 'opened') {
         result = await Exec('git', ['diff', github.context.payload.pull_request?.base.sha, 'HEAD', '--', file]);
     }
     else {
@@ -23306,7 +23306,7 @@ async function GetFileDiff(file) {
 async function GetAllFileDiff(extensions) {
     core.startGroup('Extracting Difference Files');
     let result = '';
-    if (github.context.eventName == 'pull_request' && github.context.payload.action == 'opened') {
+    if (github.context.payload.action == 'opened') {
         result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', github.context.payload.pull_request?.base.sha, 'HEAD']);
     }
     else {
@@ -23343,12 +23343,17 @@ async function Run() {
         if (core.getInput('github-token') === '') {
             throw new Error('GitHub Token is not set.');
         }
-        switch (github.context.eventName) {
-            case 'push':
-            case 'pull_request':
-                break;
-            default:
-                throw new Error(`Unsupported event: ${github.context.eventName}`);
+        if (github.context.eventName != 'pull_request') {
+            throw new Error(`Unsupported event: ${github.context.eventName}`);
+        }
+        else if (github.context.payload.action != 'opened' && github.context.payload.action != 'synchronize') {
+            throw new Error(`Unsupported action: ${github.context.payload.action}`);
+        }
+        if (github.context.payload.action == 'opened') {
+            core.info('Pull Request Opened.');
+        }
+        else {
+            core.info('Pull Request Synchronized.');
         }
         const client = CreateOpenAIClient(core.getInput('resource-name'));
         const system = `
