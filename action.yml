@@ -10,13 +10,7 @@ inputs:
       Specifies the ChatGPT model to be used.
       ex) gpt-4, gpt-3.5, gpt-3.5-turbo
     required: false
-    default: gpt-3.5-turbo
-  base-sha:
-    description: >
-      Specifies the SHA of the base commit.
-      By default, github.event.pull_request.base.sha is specified.
-    required: true
-    default: ${{ github.event.pull_request.base.sha }}
+    default: gpt-3.5-turbo-16k
   github-token:
     description: >
       Specify a GitHub token.

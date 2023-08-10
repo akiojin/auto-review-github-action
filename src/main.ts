@@ -144,8 +144,8 @@ The following points must be observed in the explanation.
 - <Suggestions for Improvement(1)>
 - <Suggestions for Improvement(2)>`
 
-        const baseSHA = core.getInput('base-sha')
-        await Exec('git', ['fetch', 'origin', baseSHA])
+        await Exec('git', ['fetch', '--depth', '2', 'origin'])
+
         const diff = await GetAllFileDiff(core.getInput('target').split(','))
 
         const messages = [
