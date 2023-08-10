@@ -23297,7 +23297,7 @@ async function GetFileDiff(file) {
         result = await Exec('git', ['diff', github.context.payload.pull_request?.base.sha, 'HEAD', '--', file]);
     }
     else {
-        result = await Exec('git', ['diff', 'HEAD^..HEAD', file]);
+        result = await Exec('git', ['diff', 'HEAD^..HEAD', '--', file]);
     }
     core.info(result);
     core.endGroup();
