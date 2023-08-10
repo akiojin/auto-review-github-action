@@ -104,12 +104,10 @@ async function Run(): Promise<void>
             throw new Error('GitHub Token is not set.')
         }
 
-        switch (github.context.eventName) {
-        case 'push':
-        case 'pull_request':
-            break
-        default:
+        if (github.context.eventName != 'pull_request') {
             throw new Error(`Unsupported event: ${github.context.eventName}`)
+        } else if (github.context.payload.action != 'opened' && github.context.payload.action != 'synchronize') {
+            throw new Error(`Unsupported action: ${github.context.payload.action}`)
         }
 
         const client = CreateOpenAIClient(core.getInput('resource-name'))
