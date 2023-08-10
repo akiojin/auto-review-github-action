@@ -23299,6 +23299,7 @@ async function GetFileDiff(file) {
     else {
         result = await Exec('git', ['diff', 'HEAD^..HEAD', file]);
     }
+    core.info(`Context: ${JSON.stringify(github.context)}`);
     core.info(result);
     core.endGroup();
     return result;

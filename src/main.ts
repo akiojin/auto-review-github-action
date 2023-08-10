@@ -42,6 +42,7 @@ async function GetFileDiff(file: string): Promise<string>
         result = await Exec('git', ['diff', 'HEAD^..HEAD', file])
     }
 
+    core.info(`Context: ${JSON.stringify(github.context)}`)
     core.info(result)
     core.endGroup()
 
