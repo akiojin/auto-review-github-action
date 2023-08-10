@@ -40,6 +40,13 @@ inputs:
     description: >
       Specify a deployment name when using Azure OpenAI.
     required: false
+  optimization:
+    description: >
+      Specifies whether to optimize the review of pull requests.
+      If optimized, only the differences from the parent commit are reviewed.
+      If not optimized, all differences from the base branch are reviewed.
+    required: false
+    default: true
 outputs:
   output:
     description: >
