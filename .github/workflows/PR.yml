@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - run: |
-          echo ${{ toJson(github) }}
+          echo "${{ toJson(github) }}"
 
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
