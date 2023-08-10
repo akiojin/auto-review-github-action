@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
+import * as github from '@actions/github'
 import * as tmp from 'tmp'
 import * as fs from 'fs/promises'
 import { OpenAIClient, AzureKeyCredential, OpenAIKeyCredential } from "@azure/openai";
@@ -37,7 +38,8 @@ async function GetFileDiff(file: string, base: string): Promise<string>
     const result = await Exec('git', ['diff', 'HEAD^..HEAD', file])
 
     base = base.replace(/"/g, '')
-//    github.context.payload.pull_request?.head.sha
+
+    core.info(`Context: ${JSON.stringify(github.context)}`)
 
     core.info(result)
     core.endGroup()
