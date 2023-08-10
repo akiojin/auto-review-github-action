@@ -23381,7 +23381,12 @@ The following points must be observed in the explanation.
 ## <file name(2)>
 - <Suggestions for Improvement(1)>
 - <Suggestions for Improvement(2)>`;
-        await Exec('git', ['fetch', '--depth', '2', 'origin']);
+        try {
+            await Exec('git', ['fetch', '--unshallow']);
+        }
+        catch (ex) {
+            await Exec('git', ['fetch', '--depth', '2']);
+        }
         const diff = await GetAllFileDiff(core.getInput('target').split(','));
         const messages = [
             { role: 'system', content: system },
