@@ -36,7 +36,7 @@ async function GetFileDiff(file: string): Promise<string>
 
     let result = ''
 
-    if (github.context.payload.action == 'opened') {
+    if (github.context.eventName == 'pull_request' && github.context.payload.action == 'opened') {
         result = await Exec('git', ['diff', github.context.payload.pull_request?.base.sha, 'HEAD', '--', file])
     } else {
         result = await Exec('git', ['diff', 'HEAD^..HEAD', file])
@@ -55,7 +55,7 @@ async function GetAllFileDiff(extensions: string[]): Promise<string>
 
     let result = ''
 
-    if (github.context.payload.action == 'opened') {
+    if (github.context.eventName == 'pull_request' && github.context.payload.action == 'opened') {
         result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', github.context.payload.pull_request?.base.sha, 'HEAD'])
     } else {
         result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', 'HEAD^..HEAD'])
@@ -101,6 +101,14 @@ async function Run(): Promise<void>
 
         if (core.getInput('github-token') === '') {
             throw new Error('GitHub Token is not set.')
+        }
+
+        switch (github.context.eventName) {
+        case 'push':
+        case 'pull_request':
+            break
+        default:
+            throw new Error(`Unsupported event: ${github.context.eventName}`)
         }
 
         const client = CreateOpenAIClient(core.getInput('resource-name'))
