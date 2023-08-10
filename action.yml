@@ -17,12 +17,6 @@ inputs:
       By default, github.token is specified.
     required: true
     default: ${{ github.token }}
-  pull-request-url:
-    description: >
-      Specify the URL of the pull request.
-      By default, github.event.pull_request.html_url is specified.
-    required: true
-    default: ${{ github.event.pull_request.html_url }}
   target:
     description: >
       Specify the extension of the file to be reviewed.
