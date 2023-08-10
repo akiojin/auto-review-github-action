@@ -34,7 +34,7 @@ async function GetFileDiff(file: string, base: string): Promise<string>
     core.startGroup(`Diff ${file}`)
 
     //const result = await Exec('git', ['diff', base, 'HEAD', '--', file])
-    const result = await Exec('git', ['diff', 'HEAD^'])
+    const result = await Exec('git', ['diff', 'HEAD^..HEAD'])
 
     base = base.replace(/"/g, '')
 //    github.context.payload.pull_request?.head.sha
