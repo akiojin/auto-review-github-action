@@ -38,7 +38,6 @@ jobs:
 
       - name: OpenAI Test
         uses: ./
-        continue-on-error: true
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           target: 'ts,yml'
@@ -46,7 +45,6 @@ jobs:
 
       - name: Azure OpenAI Test
         uses: ./
-        continue-on-error: true
         with:
           openai-api-key: ${{ secrets.AZURE_OPENAI_API_KEY }}
           target: 'ts,yml'
