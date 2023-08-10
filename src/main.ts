@@ -39,10 +39,9 @@ async function GetFileDiff(file: string): Promise<string>
     if (github.context.eventName == 'pull_request' && github.context.payload.action == 'opened') {
         result = await Exec('git', ['diff', github.context.payload.pull_request?.base.sha, 'HEAD', '--', file])
     } else {
-        result = await Exec('git', ['diff', 'HEAD^..HEAD', file])
+        result = await Exec('git', ['diff', 'HEAD~2 HEAD', file])
     }
 
-    core.info(`Context: ${JSON.stringify(github.context)}`)
     core.info(result)
     core.endGroup()
 
@@ -58,7 +57,7 @@ async function GetAllFileDiff(extensions: string[]): Promise<string>
     if (github.context.eventName == 'pull_request' && github.context.payload.action == 'opened') {
         result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', github.context.payload.pull_request?.base.sha, 'HEAD'])
     } else {
-        result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', 'HEAD^..HEAD'])
+        result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', 'HEAD~2 HEAD'])
     }
 
     const pattern = `(${extensions.map(ext => `^.*\\.${ext.trim()}`).join('|')})$`
