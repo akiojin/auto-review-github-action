@@ -23274,7 +23274,7 @@ const github = __importStar(__nccwpck_require__(5438));
 const tmp = __importStar(__nccwpck_require__(8517));
 const fs = __importStar(__nccwpck_require__(3292));
 const openai_1 = __nccwpck_require__(8946);
-const IsOptimization = github.context.payload.action == 'synchronize' && core.getBooleanInput('optimization');
+const IsOptimization = github.context.payload.action == 'synchronize' && core.getBooleanInput('optimize');
 class SkipException extends Error {
     constructor(message) {
         super(message);

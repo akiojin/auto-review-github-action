@@ -7,7 +7,7 @@ import * as tmp from 'tmp'
 import * as fs from 'fs/promises'
 import { OpenAIClient, AzureKeyCredential, OpenAIKeyCredential } from "@azure/openai";
 
-const IsOptimization = github.context.payload.action == 'synchronize' && core.getBooleanInput('optimization')
+const IsOptimization = github.context.payload.action == 'synchronize' && core.getBooleanInput('optimize')
 
 class SkipException extends Error
 {
