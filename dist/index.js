@@ -23307,9 +23307,11 @@ async function GetAllFileDiff(extensions) {
     core.startGroup('Extracting Difference Files');
     let result = '';
     if (github.context.eventName == 'pull_request' && github.context.payload.action == 'opened') {
+        core.info('Difference from the parent of the pull request.');
         result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', github.context.payload.pull_request?.base.sha, 'HEAD']);
     }
     else {
+        core.info('Difference from the previous commit.');
         result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', 'HEAD^..HEAD']);
     }
     const pattern = `(${extensions.map(ext => `^.*\\.${ext.trim()}`).join('|')})$`;
