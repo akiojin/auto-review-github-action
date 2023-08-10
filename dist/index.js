@@ -23381,12 +23381,14 @@ The following points must be observed in the explanation.
 ## <file name(2)>
 - <Suggestions for Improvement(1)>
 - <Suggestions for Improvement(2)>`;
+        core.startGroup('Git Update Status');
         try {
             await Exec('git', ['fetch', '--unshallow']);
         }
         catch (ex) {
             await Exec('git', ['fetch', '--depth', '2']);
         }
+        core.endGroup();
         const diff = await GetAllFileDiff(core.getInput('target').split(','));
         const messages = [
             { role: 'system', content: system },
