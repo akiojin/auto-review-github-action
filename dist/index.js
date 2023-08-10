@@ -16469,7 +16469,7 @@ async function Exec(command, args) {
 async function GetFileDiff(file, base) {
     core.startGroup(`Diff ${file}`);
     //const result = await Exec('git', ['diff', base, 'HEAD', '--', file])
-    const result = await Exec('git', ['diff', 'HEAD^..HEAD']);
+    const result = await Exec('git', ['diff', 'HEAD^']);
     base = base.replace(/"/g, '');
     //    github.context.payload.pull_request?.head.sha
     core.info(result);
