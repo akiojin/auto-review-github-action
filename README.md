@@ -36,23 +36,35 @@ permissions:
 
 ## Arguments
 
-| Name               | Required | Type     | Default                                     | Description                                                                                                                                                                                      |
-| ------------------ | -------- | -------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `openai-api-key`   | `true`   | `string` |                                             | Specify the API key for OpenAI; for Azure OpenAI, specify the API key for Azure OpenAI.                                                                                                          |
-| `model`            | `false`  | `string` | `gpt-3.5-turbo`                             | Specifies the ChatGPT model to use; can be omitted if Azure OpenAI is used. Possible values are: `gpt-4`, `gpt-3.5`, `gpt-3.5-turbo`.                                                            |
-| `base-sha`         | `true`   | `string` | `${{ github.event.pull_request.base.sha }}` | Specifies the SHA of the base commit. By default, `${{ github.event.pull_request.base.sha }}` is specified.                                                                                      |
-| `github-token`     | `true`   | `string` | `${{ github.token }}`                       | Specify a GitHub token. By default, `${{ github.token }}` is specified.                                                                                                                          |
-| `pull-request-url` | `true`   | `string` | `${{ github.event.pull_request.html_url }}` | Specify the URL of the pull request. By default, `${{ github.event.pull_request.html_url }}` is specified.                                                                                       |
-| `target`           | `true`   | `string` |                                             | Specify the extension of the file to be reviewed. If there are multiple files, specify them separated by commas. ex) `'md,txt,ts'`                                                               |
-| `language`         | `true`   | `string` | `English`                                   | Specify the language in which the comments will be written. This value should be specified in plain language. ex) 日本語                                                                            |
-| `resource-name`    | `false`  | `string` |                                             | Specify the resource name when using Azure OpenAI.<br>The resource name corresponds to the <resource name> in the URL of the Azure OpenAI resource.<br>https://<resource name>.openai.azure.com/ |
-| `deployment-id`    | `false`  | `string` |                                             | Specify a deployment name when using Azure OpenAI.                                                                                                                                               |
+| Name             | Required | Type      | Default               | Description                                                                                                                                                                                                   |
+| ---------------- | -------- | --------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `openai-api-key` | `true`   | `string`  |                       | Specify the API key for OpenAI; for Azure OpenAI, specify the API key for Azure OpenAI.                                                                                                                       |
+| `model`          | `false`  | `string`  | `gpt-3.5-turbo`       | Specifies the ChatGPT model to use; can be omitted if Azure OpenAI is used. Possible values are: `gpt-4`, `gpt-3.5`, `gpt-3.5-turbo`.                                                                         |
+| `github-token`   | `true`   | `string`  | `${{ github.token }}` | Specify a GitHub token. By default, `${{ github.token }}` is specified.                                                                                                                                       |
+| `target`         | `true`   | `string`  |                       | Specify the extension of the file to be reviewed. If there are multiple files, specify them separated by commas. ex) `'md,txt,ts'`                                                                            |
+| `language`       | `true`   | `string`  | `English`             | Specify the language in which the comments will be written. This value should be specified in plain language. ex) 日本語                                                                                         |
+| `resource-name`  | `false`  | `string`  |                       | Specify the resource name when using Azure OpenAI.<br>The resource name corresponds to the <resource name> in the URL of the Azure OpenAI resource.<br>https://<resource name>.openai.azure.com/              |
+| `deployment-id`  | `false`  | `string`  |                       | Specify a deployment name when using Azure OpenAI.                                                                                                                                                            |
+| `optimize`       | `false`  | `boolean` | `true`                | Specifies whether to optimize the review of pull requests.<br>If optimized, only the differences from the parent commit are reviewed.<br>If not optimized, all differences from the base branch are reviewed. |
 
 ## Notes
 
 ChatGPT has a limit on the number of messages that can be sent at one time.
 Therefore, if there are significant changes, ChatGPT may return an error 400.
 In that case, review cannot be performed, so please use `continue-on-error: true` to allow the step to proceed even if an error occurs.
+
+## Review Optimization
+
+You can optimize your pull request reviews.
+Optimization offers the following advantages
+
+- Only the differences can be reviewed.
+- Reduces the number of tokens used for OpenAI
+
+Optimization is enabled by default.
+
+If no optimization is performed, the review will always be a difference from the base branch,
+may contain similar reviews and consume more OpenAI tokens.
 
 ## How to create an API key for OpenAI
 

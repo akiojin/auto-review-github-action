@@ -17,12 +17,6 @@ inputs:
       By default, github.token is specified.
     required: true
     default: ${{ github.token }}
-  pull-request-url:
-    description: >
-      Specify the URL of the pull request.
-      By default, github.event.pull_request.html_url is specified.
-    required: true
-    default: ${{ github.event.pull_request.html_url }}
   target:
     description: >
       Specify the extension of the file to be reviewed.
@@ -46,6 +40,13 @@ inputs:
     description: >
       Specify a deployment name when using Azure OpenAI.
     required: false
+  optimize:
+    description: >
+      Specifies whether to optimize the review of pull requests.
+      If optimized, only the differences from the parent commit are reviewed.
+      If not optimized, all differences from the base branch are reviewed.
+    required: false
+    default: true
 outputs:
   output:
     description: >

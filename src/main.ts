@@ -1,9 +1,13 @@
+// Copyright (c) 2022 Akio Jinsenji
+
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as github from '@actions/github'
 import * as tmp from 'tmp'
 import * as fs from 'fs/promises'
 import { OpenAIClient, AzureKeyCredential, OpenAIKeyCredential } from "@azure/openai";
+
+const IsOptimization = github.context.payload.action == 'synchronize' && core.getBooleanInput('optimize')
 
 class SkipException extends Error
 {
@@ -36,10 +40,10 @@ async function GetFileDiff(file: string): Promise<string>
 
   let result = ''
 
-  if (github.context.payload.action === 'opened') {
-    result = await Exec('git', ['diff', github.context.payload.pull_request?.base.sha, 'HEAD', '--', file])
-  } else {
+  if (IsOptimization) {
     result = await Exec('git', ['diff', 'HEAD^..HEAD', '--', file])
+  } else {
+    result = await Exec('git', ['diff', github.context.payload.pull_request?.base.sha, 'HEAD', '--', file])
   }
 
   core.info(result)
@@ -54,10 +58,10 @@ async function GetAllFileDiff(extensions: string[]): Promise<string>
 
   let result = ''
 
-  if (github.context.payload.action === 'opened') {
-    result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', github.context.payload.pull_request?.base.sha, 'HEAD'])
-  } else {
+  if (IsOptimization) {
     result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', 'HEAD^..HEAD'])
+  } else {
+    result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', github.context.payload.pull_request?.base.sha, 'HEAD'])
   }
 
   const pattern = `(${extensions.map(ext => `^.*\\.${ext.trim()}`).join('|')})$`
@@ -91,22 +95,31 @@ function CreateOpenAIClient(resourceName?: string): OpenAIClient
   }
 }
 
+function ThrowIfParametersMissing(): void
+{
+  if (core.getInput('openai-api-key') === '') {
+    throw new Error('OpenAI API Key is not set.')
+  }
+
+  if (core.getInput('github-token') === '') {
+    throw new Error('GitHub Token is not set.')
+  }
+}
+
+function ThrowIfNotSupportedEvent(): void
+{
+  if (github.context.eventName != 'pull_request') {
+    throw new Error(`Unsupported event: ${github.context.eventName}`)
+  } else if (github.context.payload.action != 'opened' && github.context.payload.action != 'synchronize') {
+    throw new Error(`Unsupported action: ${github.context.payload.action}`)
+  }
+}
+
 async function Run(): Promise<void>
 {
   try {
-    if (core.getInput('openai-api-key') === '') {
-      throw new Error('OpenAI API Key is not set.')
-    }
-
-    if (core.getInput('github-token') === '') {
-      throw new Error('GitHub Token is not set.')
-    }
-
-    if (github.context.eventName != 'pull_request') {
-      throw new Error(`Unsupported event: ${github.context.eventName}`)
-    } else if (github.context.payload.action != 'opened' && github.context.payload.action != 'synchronize') {
-      throw new Error(`Unsupported action: ${github.context.payload.action}`)
-    }
+    ThrowIfParametersMissing()
+    ThrowIfNotSupportedEvent()
 
     if (github.context.payload.action == 'opened') {
       core.info('Pull Request Opened.')

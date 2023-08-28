@@ -23243,6 +23243,7 @@ function wrappy (fn, cb) {
 
 "use strict";
 
+// Copyright (c) 2022 Akio Jinsenji
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -23273,6 +23274,7 @@ const github = __importStar(__nccwpck_require__(5438));
 const tmp = __importStar(__nccwpck_require__(8517));
 const fs = __importStar(__nccwpck_require__(3292));
 const openai_1 = __nccwpck_require__(8946);
+const IsOptimization = github.context.payload.action == 'synchronize' && core.getBooleanInput('optimize');
 class SkipException extends Error {
     constructor(message) {
         super(message);
@@ -23293,11 +23295,11 @@ async function Exec(command, args) {
 async function GetFileDiff(file) {
     core.startGroup(`Diff ${file}`);
     let result = '';
-    if (github.context.payload.action === 'opened') {
-        result = await Exec('git', ['diff', github.context.payload.pull_request?.base.sha, 'HEAD', '--', file]);
+    if (IsOptimization) {
+        result = await Exec('git', ['diff', 'HEAD^..HEAD', '--', file]);
     }
     else {
-        result = await Exec('git', ['diff', 'HEAD^..HEAD', '--', file]);
+        result = await Exec('git', ['diff', github.context.payload.pull_request?.base.sha, 'HEAD', '--', file]);
     }
     core.info(result);
     core.endGroup();
@@ -23306,11 +23308,11 @@ async function GetFileDiff(file) {
 async function GetAllFileDiff(extensions) {
     core.startGroup('Extracting Difference Files');
     let result = '';
-    if (github.context.payload.action === 'opened') {
-        result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', github.context.payload.pull_request?.base.sha, 'HEAD']);
+    if (IsOptimization) {
+        result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', 'HEAD^..HEAD']);
     }
     else {
-        result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', 'HEAD^..HEAD']);
+        result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', github.context.payload.pull_request?.base.sha, 'HEAD']);
     }
     const pattern = `(${extensions.map(ext => `^.*\\.${ext.trim()}`).join('|')})$`;
     const match = result.match(new RegExp(pattern, 'gm'));
@@ -23335,20 +23337,26 @@ function CreateOpenAIClient(resourceName) {
         return new openai_1.OpenAIClient(new openai_1.OpenAIKeyCredential(core.getInput('openai-api-key')));
     }
 }
+function ThrowIfParametersMissing() {
+    if (core.getInput('openai-api-key') === '') {
+        throw new Error('OpenAI API Key is not set.');
+    }
+    if (core.getInput('github-token') === '') {
+        throw new Error('GitHub Token is not set.');
+    }
+}
+function ThrowIfNotSupportedEvent() {
+    if (github.context.eventName != 'pull_request') {
+        throw new Error(`Unsupported event: ${github.context.eventName}`);
+    }
+    else if (github.context.payload.action != 'opened' && github.context.payload.action != 'synchronize') {
+        throw new Error(`Unsupported action: ${github.context.payload.action}`);
+    }
+}
 async function Run() {
     try {
-        if (core.getInput('openai-api-key') === '') {
-            throw new Error('OpenAI API Key is not set.');
-        }
-        if (core.getInput('github-token') === '') {
-            throw new Error('GitHub Token is not set.');
-        }
-        if (github.context.eventName != 'pull_request') {
-            throw new Error(`Unsupported event: ${github.context.eventName}`);
-        }
-        else if (github.context.payload.action != 'opened' && github.context.payload.action != 'synchronize') {
-            throw new Error(`Unsupported action: ${github.context.payload.action}`);
-        }
+        ThrowIfParametersMissing();
+        ThrowIfNotSupportedEvent();
         if (github.context.payload.action == 'opened') {
             core.info('Pull Request Opened.');
         }
