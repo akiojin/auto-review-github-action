@@ -7,7 +7,7 @@ import * as tmp from 'tmp'
 import * as fs from 'fs/promises'
 import { OpenAIClient, AzureKeyCredential, OpenAIKeyCredential } from "@azure/openai";
 
-const IsOptimization = github.context.payload.action == 'synchronize' && core.getBooleanInput('optimize')
+const IsOptimization = github.context.payload.action === 'synchronize' && core.getBooleanInput('optimize')
 
 class SkipException extends Error
 {
@@ -190,7 +190,13 @@ The following points must be observed in the explanation.
     process.env.GITHUB_TOKEN = core.getInput('github-token')
 
     core.startGroup('GitHub CLI Comment')
-    await exec.exec('gh', ['pr', 'comment', '--body-file', body, core.getInput('pull-request-url')])
+    await exec.exec('gh', [
+      'pr',
+      'comment',
+      '--body-file',
+      body,
+      github.context.payload.pull_request?.html_url || ''
+    ]);
     core.endGroup()
 
     core.setOutput('output', answer)

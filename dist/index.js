@@ -23274,7 +23274,7 @@ const github = __importStar(__nccwpck_require__(5438));
 const tmp = __importStar(__nccwpck_require__(8517));
 const fs = __importStar(__nccwpck_require__(3292));
 const openai_1 = __nccwpck_require__(8946);
-const IsOptimization = github.context.payload.action == 'synchronize' && core.getBooleanInput('optimize');
+const IsOptimization = github.context.payload.action === 'synchronize' && core.getBooleanInput('optimize');
 class SkipException extends Error {
     constructor(message) {
         super(message);
@@ -23416,7 +23416,13 @@ The following points must be observed in the explanation.
         await fs.writeFile(body, answer);
         process.env.GITHUB_TOKEN = core.getInput('github-token');
         core.startGroup('GitHub CLI Comment');
-        await exec.exec('gh', ['pr', 'comment', '--body-file', body, core.getInput('pull-request-url')]);
+        await exec.exec('gh', [
+            'pr',
+            'comment',
+            '--body-file',
+            body,
+            github.context.payload.pull_request?.html_url || ''
+        ]);
         core.endGroup();
         core.setOutput('output', answer);
     }
