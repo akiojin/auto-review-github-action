@@ -23274,7 +23274,8 @@ const github = __importStar(__nccwpck_require__(5438));
 const tmp = __importStar(__nccwpck_require__(8517));
 const fs = __importStar(__nccwpck_require__(3292));
 const openai_1 = __nccwpck_require__(8946);
-const IsOptimization = github.context.payload.action == 'synchronize' && core.getBooleanInput('optimize');
+const IsOptimization = github.context.payload.action === 'synchronize' && core.getBooleanInput('optimize');
+const IsAzureOpenAI = !!core.getInput('resource-name');
 class SkipException extends Error {
     constructor(message) {
         super(message);
@@ -23328,7 +23329,7 @@ async function GetAllFileDiff(extensions) {
     return diff;
 }
 function CreateOpenAIClient(resourceName) {
-    if (resourceName) {
+    if (IsAzureOpenAI) {
         core.info('Use Azure OpenAI API.');
         return new openai_1.OpenAIClient(`https://${resourceName}.openai.azure.com/`, new openai_1.AzureKeyCredential(core.getInput('openai-api-key')));
     }
@@ -23363,6 +23364,7 @@ async function Run() {
         else {
             core.info('Pull Request Synchronized.');
         }
+        core.info(`Optimization: ${IsOptimization}`);
         const client = CreateOpenAIClient(core.getInput('resource-name'));
         const system = `
 # input
@@ -23395,12 +23397,8 @@ The following points must be observed in the explanation.
 - <Suggestions for Improvement(1)>
 - <Suggestions for Improvement(2)>`;
         core.startGroup('Git Update Status');
-        try {
-            await Exec('git', ['fetch', '--unshallow']);
-        }
-        catch (ex) {
-            await Exec('git', ['fetch', '--depth', '2']);
-        }
+        await Exec('git', ['fetch', 'origin', github.context.payload.pull_request?.head.ref]);
+        await Exec('git', ['checkout', github.context.payload.pull_request?.head.ref]);
         core.endGroup();
         const diff = await GetAllFileDiff(core.getInput('target').split(','));
         const messages = [
@@ -23413,7 +23411,7 @@ The following points must be observed in the explanation.
             throw new Error('No answer received from the OpenAI API.');
         }
         const body = tmp.tmpNameSync();
-        await fs.writeFile(body, answer);
+        await fs.writeFile(body, `${answer}\n\n **by ${IsAzureOpenAI ? 'Azure OpenAI' : 'OpenAI'}**`);
         process.env.GITHUB_TOKEN = core.getInput('github-token');
         core.startGroup('GitHub CLI Comment');
         await exec.exec('gh', [

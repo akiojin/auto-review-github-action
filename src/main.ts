@@ -7,129 +7,132 @@ import * as tmp from 'tmp'
 import * as fs from 'fs/promises'
 import { OpenAIClient, AzureKeyCredential, OpenAIKeyCredential } from "@azure/openai";
 
-const IsOptimization = github.context.payload.action == 'synchronize' && core.getBooleanInput('optimize')
+const IsOptimization = github.context.payload.action === 'synchronize' && core.getBooleanInput('optimize')
+const IsAzureOpenAI = !!core.getInput('resource-name')
 
 class SkipException extends Error
 {
-    constructor(message: string)
-    {
-        super(message)
-    }
+  constructor(message: string)
+  {
+    super(message)
+  }
 }
 
 async function Exec(command: string, args: string[]): Promise<string>
 {
-    let output = ''
+  let output = ''
 
-    const options: exec.ExecOptions = {
-        listeners: {
-            stdout: (data: Buffer) => {
-                output += data.toString()
-            }
-        }
+  const options: exec.ExecOptions = {
+    listeners: {
+      stdout: (data: Buffer) => {
+        output += data.toString()
+      }
     }
+  }
 
-    await exec.exec(command, args, options)
+  await exec.exec(command, args, options)
 
-    return output
+  return output
 }
 
 async function GetFileDiff(file: string): Promise<string>
 {
-    core.startGroup(`Diff ${file}`)
+  core.startGroup(`Diff ${file}`)
 
-    let result = ''
+  let result = ''
 
-    if (IsOptimization) {
-        result = await Exec('git', ['diff', 'HEAD^..HEAD', '--', file])
-    } else {
-        result = await Exec('git', ['diff', github.context.payload.pull_request?.base.sha, 'HEAD', '--', file])
-    }
+  if (IsOptimization) {
+    result = await Exec('git', ['diff', 'HEAD^..HEAD', '--', file])
+  } else {
+    result = await Exec('git', ['diff', github.context.payload.pull_request?.base.sha, 'HEAD', '--', file])
+  }
 
-    core.info(result)
-    core.endGroup()
+  core.info(result)
+  core.endGroup()
 
-    return result;
+  return result;
 }
 
 async function GetAllFileDiff(extensions: string[]): Promise<string>
 {
-    core.startGroup('Extracting Difference Files')
+  core.startGroup('Extracting Difference Files')
 
-    let result = ''
+  let result = ''
 
-    if (IsOptimization) {
-        result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', 'HEAD^..HEAD'])
-    } else {
-        result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', github.context.payload.pull_request?.base.sha, 'HEAD'])
-    }
+  if (IsOptimization) {
+    result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', 'HEAD^..HEAD'])
+  } else {
+    result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', github.context.payload.pull_request?.base.sha, 'HEAD'])
+  }
 
-    const pattern = `(${extensions.map(ext => `^.*\\.${ext.trim()}`).join('|')})$`
-    const match = result.match(new RegExp(pattern, 'gm'))
-    core.endGroup()
+  const pattern = `(${extensions.map(ext => `^.*\\.${ext.trim()}`).join('|')})$`
+  const match = result.match(new RegExp(pattern, 'gm'))
+  core.endGroup()
 
-    if (!match) {
-        throw new SkipException(`Not found. Match Pattern="${pattern}"`)
-    }
+  if (!match) {
+    throw new SkipException(`Not found. Match Pattern="${pattern}"`)
+  }
 
-    let diff = ''
+  let diff = ''
 
-    for await (const file of match) {
-        const data = await GetFileDiff(file)
-        diff += data.toString()
-    }
+  for await (const file of match) {
+    const data = await GetFileDiff(file)
+    diff += data.toString()
+  }
 
-    return diff
+  return diff
 }
 
 function CreateOpenAIClient(resourceName?: string): OpenAIClient
 {
-    if (resourceName) {
-        core.info('Use Azure OpenAI API.')
-        return new OpenAIClient(
-            `https://${resourceName}.openai.azure.com/`,
-            new AzureKeyCredential(core.getInput('openai-api-key')))
-    } else {
-        core.info('Use OpenAI API.')
-        return new OpenAIClient(new OpenAIKeyCredential(core.getInput('openai-api-key')));
-    }
+  if (IsAzureOpenAI) {
+    core.info('Use Azure OpenAI API.')
+    return new OpenAIClient(
+      `https://${resourceName}.openai.azure.com/`,
+      new AzureKeyCredential(core.getInput('openai-api-key')))
+  } else {
+    core.info('Use OpenAI API.')
+    return new OpenAIClient(new OpenAIKeyCredential(core.getInput('openai-api-key')));
+  }
 }
 
 function ThrowIfParametersMissing(): void
 {
-    if (core.getInput('openai-api-key') === '') {
-        throw new Error('OpenAI API Key is not set.')
-    }
+  if (core.getInput('openai-api-key') === '') {
+    throw new Error('OpenAI API Key is not set.')
+  }
 
-    if (core.getInput('github-token') === '') {
-        throw new Error('GitHub Token is not set.')
-    }
+  if (core.getInput('github-token') === '') {
+    throw new Error('GitHub Token is not set.')
+  }
 }
 
 function ThrowIfNotSupportedEvent(): void
 {
-    if (github.context.eventName != 'pull_request') {
-        throw new Error(`Unsupported event: ${github.context.eventName}`)
-    } else if (github.context.payload.action != 'opened' && github.context.payload.action != 'synchronize') {
-        throw new Error(`Unsupported action: ${github.context.payload.action}`)
-    }
+  if (github.context.eventName != 'pull_request') {
+    throw new Error(`Unsupported event: ${github.context.eventName}`)
+  } else if (github.context.payload.action != 'opened' && github.context.payload.action != 'synchronize') {
+    throw new Error(`Unsupported action: ${github.context.payload.action}`)
+  }
 }
 
 async function Run(): Promise<void>
 {
-    try {
-        ThrowIfParametersMissing()
-        ThrowIfNotSupportedEvent()
+  try {
+    ThrowIfParametersMissing()
+    ThrowIfNotSupportedEvent()
 
-        if (github.context.payload.action == 'opened') {
-            core.info('Pull Request Opened.')
-        } else {
-            core.info('Pull Request Synchronized.')
-        }
+    if (github.context.payload.action == 'opened') {
+      core.info('Pull Request Opened.')
+    } else {
+      core.info('Pull Request Synchronized.')
+    }
 
-        const client = CreateOpenAIClient(core.getInput('resource-name'))
+    core.info(`Optimization: ${IsOptimization}`)
 
-        const system = `
+    const client = CreateOpenAIClient(core.getInput('resource-name'))
+
+    const system = `
 # input
 - Result of running git diff command
 # What to do
@@ -160,53 +163,50 @@ The following points must be observed in the explanation.
 - <Suggestions for Improvement(1)>
 - <Suggestions for Improvement(2)>`
 
-        core.startGroup('Git Update Status')
-        try {
-            await Exec('git', ['fetch', '--unshallow'])
-        } catch (ex) {
-            await Exec('git', ['fetch', '--depth', '2'])
-        }
-        core.endGroup()
+    core.startGroup('Git Update Status')
+    await Exec('git', ['fetch', 'origin', github.context.payload.pull_request?.head.ref])
+    await Exec('git', ['checkout', github.context.payload.pull_request?.head.ref])
+    core.endGroup()
 
-        const diff = await GetAllFileDiff(core.getInput('target').split(','))
+    const diff = await GetAllFileDiff(core.getInput('target').split(','))
 
-        const messages = [
-            { role: 'system', content: system },
-            { role: 'user', content: diff }
-        ]
+    const messages = [
+      { role: 'system', content: system },
+      { role: 'user', content: diff }
+    ]
 
-        const result = await client.getChatCompletions(
-            core.getInput('deployment-id') || core.getInput('model'), messages)
+    const result = await client.getChatCompletions(
+      core.getInput('deployment-id') || core.getInput('model'), messages)
 
-        const answer = result.choices[0].message?.content;
+    const answer = result.choices[0].message?.content;
 
-        if (!answer) {
-            throw new Error('No answer received from the OpenAI API.')
-        }
-
-        const body = tmp.tmpNameSync()
-        await fs.writeFile(body, answer)
-
-        process.env.GITHUB_TOKEN = core.getInput('github-token')
-
-        core.startGroup('GitHub CLI Comment')
-        await exec.exec('gh', [
-            'pr',
-            'comment',
-            '--body-file',
-            body,
-            github.context.payload.pull_request?.html_url || ''
-        ])
-        core.endGroup()
-
-        core.setOutput('output', answer)
-    } catch (ex: any) {
-        if (ex instanceof SkipException) {
-            core.info(ex.message)
-        } else {
-            core.setFailed(ex.message)
-        }
+    if (!answer) {
+      throw new Error('No answer received from the OpenAI API.')
     }
+
+    const body = tmp.tmpNameSync()
+    await fs.writeFile(body, `${answer}\n\n **by ${IsAzureOpenAI ? 'Azure OpenAI' : 'OpenAI'}**`)
+
+    process.env.GITHUB_TOKEN = core.getInput('github-token')
+
+    core.startGroup('GitHub CLI Comment')
+    await exec.exec('gh', [
+      'pr',
+      'comment',
+      '--body-file',
+      body,
+      github.context.payload.pull_request?.html_url || ''
+    ]);
+    core.endGroup()
+
+    core.setOutput('output', answer)
+  } catch (ex: any) {
+    if (ex instanceof SkipException) {
+      core.info(ex.message)
+    } else {
+      core.setFailed(ex.message)
+    }
+  }
 }
 
 Run()
