@@ -23407,7 +23407,9 @@ The following points must be observed in the explanation.
             { role: 'system', content: system },
             { role: 'user', content: diff }
         ];
+        core.debug('GetChatCompletions');
         const result = await client.getChatCompletions(core.getInput('deployment-id') || core.getInput('model'), messages);
+        core.debug('Response');
         const answer = result.choices[0].message?.content;
         if (!answer) {
             throw new Error('No answer received from the OpenAI API.');

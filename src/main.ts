@@ -177,9 +177,11 @@ The following points must be observed in the explanation.
       { role: 'user', content: diff }
     ]
 
+    core.debug('GetChatCompletions')
     const result = await client.getChatCompletions(
       core.getInput('deployment-id') || core.getInput('model'), messages)
 
+    core.debug('Response')
     const answer = result.choices[0].message?.content;
 
     if (!answer) {
