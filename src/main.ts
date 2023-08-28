@@ -171,6 +171,7 @@ The following points must be observed in the explanation.
 
     const diff = await GetAllFileDiff(core.getInput('target').split(','))
 
+    core.startGroup('OpenAI API Request')
     const messages = [
       { role: 'system', content: system },
       { role: 'user', content: diff }
@@ -184,13 +185,14 @@ The following points must be observed in the explanation.
     if (!answer) {
       throw new Error('No answer received from the OpenAI API.')
     }
+    core.info(`answer: ${answer}`)
 
     const body = tmp.tmpNameSync()
     await fs.writeFile(body, `${answer}\n\n **by ${IsAzureOpenAI ? 'Azure OpenAI' : 'OpenAI'}**`)
-
-    process.env.GITHUB_TOKEN = core.getInput('github-token')
+    core.endGroup()
 
     core.startGroup('GitHub CLI Comment')
+    process.env.GITHUB_TOKEN = core.getInput('github-token')
     await exec.exec('gh', [
       'pr',
       'comment',
