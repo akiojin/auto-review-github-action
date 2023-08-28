@@ -8,6 +8,7 @@ import * as fs from 'fs/promises'
 import { OpenAIClient, AzureKeyCredential, OpenAIKeyCredential } from "@azure/openai";
 
 const IsOptimization = github.context.payload.action === 'synchronize' && core.getBooleanInput('optimize')
+const IsAzureOpenAI = !!core.getInput('resource-name')
 
 class SkipException extends Error
 {
@@ -84,7 +85,7 @@ async function GetAllFileDiff(extensions: string[]): Promise<string>
 
 function CreateOpenAIClient(resourceName?: string): OpenAIClient
 {
-  if (resourceName) {
+  if (IsAzureOpenAI) {
     core.info('Use Azure OpenAI API.')
     return new OpenAIClient(
       `https://${resourceName}.openai.azure.com/`,
@@ -163,13 +164,8 @@ The following points must be observed in the explanation.
 - <Suggestions for Improvement(2)>`
 
     core.startGroup('Git Update Status')
-    try {
-      await Exec('git', ['fetch', 'origin', github.context.payload.pull_request?.head.ref])
-      await Exec('git', ['checkout', github.context.payload.pull_request?.head.ref])
-//      await Exec('git', ['fetch', '--unshallow'])
-    } catch (err) {
-      await Exec('git', ['fetch', '--depth', '2'])
-    }
+    await Exec('git', ['fetch', 'origin', github.context.payload.pull_request?.head.ref])
+    await Exec('git', ['checkout', github.context.payload.pull_request?.head.ref])
     core.endGroup()
 
     const diff = await GetAllFileDiff(core.getInput('target').split(','))
@@ -189,7 +185,7 @@ The following points must be observed in the explanation.
     }
 
     const body = tmp.tmpNameSync()
-    await fs.writeFile(body, answer)
+    await fs.writeFile(body, `${answer}\n\n by ${IsAzureOpenAI ? 'Azure OpenAI' : 'OpenAI'}`)
 
     process.env.GITHUB_TOKEN = core.getInput('github-token')
 
