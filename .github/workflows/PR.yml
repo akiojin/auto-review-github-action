@@ -24,6 +24,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
 
       - run: echo "Checked out branch is $(git rev-parse --abbrev-ref HEAD)"
 
