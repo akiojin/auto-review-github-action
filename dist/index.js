@@ -23293,7 +23293,7 @@ async function Exec(command, args) {
 async function GetFileDiff(file) {
     core.startGroup(`Diff ${file}`);
     let result = '';
-    if (github.context.payload.action == 'opened') {
+    if (github.context.payload.action === 'opened') {
         result = await Exec('git', ['diff', github.context.payload.pull_request?.base.sha, 'HEAD', '--', file]);
     }
     else {
@@ -23306,7 +23306,7 @@ async function GetFileDiff(file) {
 async function GetAllFileDiff(extensions) {
     core.startGroup('Extracting Difference Files');
     let result = '';
-    if (github.context.payload.action == 'opened') {
+    if (github.context.payload.action === 'opened') {
         result = await Exec('git', ['diff', '--diff-filter=MAD', '--name-only', github.context.payload.pull_request?.base.sha, 'HEAD']);
     }
     else {
@@ -23387,12 +23387,7 @@ The following points must be observed in the explanation.
 - <Suggestions for Improvement(1)>
 - <Suggestions for Improvement(2)>`;
         core.startGroup('Git Update Status');
-        try {
-            await Exec('git', ['fetch', '--unshallow']);
-        }
-        catch (ex) {
-            await Exec('git', ['fetch', '--depth', '2']);
-        }
+        await Exec('git', ['fetch', '--depth', '2']);
         core.endGroup();
         const diff = await GetAllFileDiff(core.getInput('target').split(','));
         const messages = [
