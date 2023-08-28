@@ -23397,7 +23397,7 @@ The following points must be observed in the explanation.
 - <Suggestions for Improvement(1)>
 - <Suggestions for Improvement(2)>`;
         core.startGroup('Git Update Status');
-        await Exec('git', ['fetch', 'origin', github.context.payload.pull_request?.head.ref]);
+        await Exec('git', ['fetch', 'origin', github.context.payload.pull_request?.head.ref, '--depth=2']);
         await Exec('git', ['checkout', github.context.payload.pull_request?.head.ref]);
         core.endGroup();
         const diff = await GetAllFileDiff(core.getInput('target').split(','));
