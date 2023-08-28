@@ -23395,7 +23395,12 @@ The following points must be observed in the explanation.
 - <Suggestions for Improvement(1)>
 - <Suggestions for Improvement(2)>`;
         core.startGroup('Git Update Status');
-        await Exec('git', ['fetch', '--depth', '2']);
+        try {
+            await Exec('git', ['fetch', '--unshallow']);
+        }
+        catch (err) {
+            await Exec('git', ['fetch', '--depth', '2']);
+        }
         core.endGroup();
         const diff = await GetAllFileDiff(core.getInput('target').split(','));
         const messages = [
