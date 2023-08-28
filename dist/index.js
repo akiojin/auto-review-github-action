@@ -23397,7 +23397,9 @@ The following points must be observed in the explanation.
 - <Suggestions for Improvement(2)>`;
         core.startGroup('Git Update Status');
         try {
-            await Exec('git', ['fetch', '--unshallow']);
+            await Exec('git', ['fetch', 'origin', github.context.payload.pull_request?.head.ref]);
+            await Exec('git', ['checkout', github.context.payload.pull_request?.head.ref]);
+            //      await Exec('git', ['fetch', '--unshallow'])
         }
         catch (err) {
             await Exec('git', ['fetch', '--depth', '2']);
