@@ -127,6 +127,8 @@ async function Run(): Promise<void>
       core.info('Pull Request Synchronized.')
     }
 
+    core.info(`Optimization: ${IsOptimization}`)
+
     const client = CreateOpenAIClient(core.getInput('resource-name'))
 
     const system = `
