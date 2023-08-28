@@ -23412,7 +23412,7 @@ The following points must be observed in the explanation.
         if (!answer) {
             throw new Error('No answer received from the OpenAI API.');
         }
-        core.info(`answer: ${answer}`);
+        core.info(`answer: \n${answer}`);
         const body = tmp.tmpNameSync();
         await fs.writeFile(body, `${answer}\n\n **by ${IsAzureOpenAI ? 'Azure OpenAI' : 'OpenAI'}**`);
         core.endGroup();
