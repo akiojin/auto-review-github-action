@@ -23411,7 +23411,7 @@ The following points must be observed in the explanation.
             throw new Error('No answer received from the OpenAI API.');
         }
         const body = tmp.tmpNameSync();
-        await fs.writeFile(body, `${answer}\n\n by ${IsAzureOpenAI ? 'Azure OpenAI' : 'OpenAI'}`);
+        await fs.writeFile(body, `${answer}\n\n **by ${IsAzureOpenAI ? 'Azure OpenAI' : 'OpenAI'}**`);
         process.env.GITHUB_TOKEN = core.getInput('github-token');
         core.startGroup('GitHub CLI Comment');
         await exec.exec('gh', [
