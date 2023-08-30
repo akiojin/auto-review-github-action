@@ -122,6 +122,8 @@ async function Run(): Promise<void>
     ThrowIfParametersMissing()
     ThrowIfNotSupportedEvent()
 
+    const displaySuggestions = core.getInput('display-suggestions') === 'false' ? false : true;
+
     if (github.context.payload.action == 'opened') {
       core.info('Pull Request Opened.')
     } else {
@@ -132,7 +134,7 @@ async function Run(): Promise<void>
 
     const client = CreateOpenAIClient(core.getInput('resource-name'))
 
-    const system = `
+    let system = `
 # input
 - Result of running git diff command
 # What to do
@@ -153,15 +155,18 @@ The following points must be observed in the explanation.
 - <Summary by file(2)>
 ## <file name(2)>
 - <Summary by file(1)>
-- <Summary by file(2)>
+- <Summary by file(2)>`;
 
-# Suggestions for improvement
-## <file name(1)>
-- <Suggestions for Improvement (1)>
-- <Suggestions for Improvement (2)>
-## <file name(2)>
-- <Suggestions for Improvement(1)>
-- <Suggestions for Improvement(2)>`
+if (displaySuggestions) {
+  system += `
+  # Suggestions for improvement
+  ## <file name(1)>
+  - <Suggestions for Improvement (1)>
+  - <Suggestions for Improvement (2)>
+  ## <file name(2)>
+  - <Suggestions for Improvement(1)>
+  - <Suggestions for Improvement(2)>`;
+}
 
     core.startGroup('Git Update Status')
     await Exec('git', ['fetch', 'origin', github.context.payload.pull_request?.base.sha])
