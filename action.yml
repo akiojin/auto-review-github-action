@@ -47,6 +47,11 @@ inputs:
       If not optimized, all differences from the base branch are reviewed.
     required: false
     default: true
+  display-suggestions:
+    description: >
+      You can specify whether to display improvement suggestions.
+      ex) false
+    required: false
 outputs:
   output:
     description: >
