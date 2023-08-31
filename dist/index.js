@@ -23358,7 +23358,7 @@ async function Run() {
     try {
         ThrowIfParametersMissing();
         ThrowIfNotSupportedEvent();
-        const displaySuggestions = core.getInput('display-suggestions') === 'false' ? false : true;
+        const displaySuggestions = core.getInput('display-suggestions') != 'false';
         if (github.context.payload.action == 'opened') {
             core.info('Pull Request Opened.');
         }
