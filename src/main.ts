@@ -139,8 +139,14 @@ async function Run(): Promise<void>
 - Result of running git diff command
 # What to do
 We would like to request the following
-- A brief description of the updates based on the differences between the before and after revisions
-- Suggestions for improvements to make it better with the revisions
+- A brief description of the updates based on the differences between the before and after revisions`
+
+if (displaySuggestions) {
+  system += `
+  - Suggestions for improvements to make it better with the revisions`;
+}
+
+system += `
 # Restrictions
 The following points must be observed in the explanation.
 - All languages must be output in ${ core.getInput('language') } when answering.
