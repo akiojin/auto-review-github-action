@@ -30,6 +30,10 @@ inputs:
       ex) 日本語
     required: true
     default: English
+  prompt-template:
+    description: >
+      Enter when you want to use the prompt template.
+    required: false
   resource-name:
     description: >
       Specify the resource name when using Azure OpenAI.

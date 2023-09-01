@@ -169,11 +169,13 @@ The following points must be observed in the explanation.
     await Exec('git', ['checkout', github.context.payload.pull_request?.head.ref])
     core.endGroup()
 
+    const promptTemplate = core.getInput('prompt-template') || system
+
     const diff = await GetAllFileDiff(core.getInput('target').split(','))
 
     core.startGroup('OpenAI API Request')
     const messages = [
-      { role: 'system', content: system },
+      { role: 'system', content: promptTemplate },
       { role: 'user', content: diff }
     ]
 
