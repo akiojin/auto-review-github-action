@@ -23401,7 +23401,8 @@ The following points must be observed in the explanation.
         await Exec('git', ['fetch', 'origin', github.context.payload.pull_request?.head.ref, '--depth=2']);
         await Exec('git', ['checkout', github.context.payload.pull_request?.head.ref]);
         core.endGroup();
-        const promptTemplate = core.getInput('prompt-template') || system;
+        const promptTemplate = core.getInput('prompt-template') ?? system;
+        console.log(promptTemplate);
         const diff = await GetAllFileDiff(core.getInput('target').split(','));
         core.startGroup('OpenAI API Request');
         const messages = [
