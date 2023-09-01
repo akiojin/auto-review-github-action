@@ -51,7 +51,8 @@ inputs:
     description: >
       You can specify whether to display improvement suggestions.
       ex) false
-    required: false
+    required: true
+    default: true
 outputs:
   output:
     description: >
