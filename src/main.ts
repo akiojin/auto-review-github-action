@@ -171,8 +171,6 @@ The following points must be observed in the explanation.
 
     const promptTemplate = core.getInput('prompt-template') ?? system
 
-    console.log(promptTemplate)
-
     const diff = await GetAllFileDiff(core.getInput('target').split(','))
 
     core.startGroup('OpenAI API Request')
