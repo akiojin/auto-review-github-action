@@ -30,7 +30,7 @@
     "@actions/core": "1.10.0",
     "@actions/exec": "^1.1.1",
     "@actions/github": "5.1.1",
-    "@azure/openai": "^1.0.0-beta.3",
+    "@azure/openai": "^1.0.0-beta.5",
     "@commitlint/cli": "17.6.7",
     "@commitlint/config-conventional": "17.6.7",
     "@types/node": "20.4.5",
