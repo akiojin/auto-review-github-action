@@ -122,6 +122,8 @@ async function Run(): Promise<void>
     ThrowIfParametersMissing()
     ThrowIfNotSupportedEvent()
 
+    const displaySuggestions = core.getBooleanInput('display-suggestions')
+
     if (github.context.payload.action == 'opened') {
       core.info('Pull Request Opened.')
     } else {
@@ -132,13 +134,19 @@ async function Run(): Promise<void>
 
     const client = CreateOpenAIClient(core.getInput('resource-name'))
 
-    const system = `
+    let system = `
 # input
 - Result of running git diff command
 # What to do
 We would like to request the following
-- A brief description of the updates based on the differences between the before and after revisions
-- Suggestions for improvements to make it better with the revisions
+- A brief description of the updates based on the differences between the before and after revisions`
+
+if (displaySuggestions) {
+  system += `
+  - Suggestions for improvements to make it better with the revisions`;
+}
+
+system += `
 # Restrictions
 The following points must be observed in the explanation.
 - All languages must be output in ${ core.getInput('language') } when answering.
@@ -153,15 +161,18 @@ The following points must be observed in the explanation.
 - <Summary by file(2)>
 ## <file name(2)>
 - <Summary by file(1)>
-- <Summary by file(2)>
+- <Summary by file(2)>`;
 
-# Suggestions for improvement
-## <file name(1)>
-- <Suggestions for Improvement (1)>
-- <Suggestions for Improvement (2)>
-## <file name(2)>
-- <Suggestions for Improvement(1)>
-- <Suggestions for Improvement(2)>`
+if (displaySuggestions) {
+  system += `
+  # Suggestions for improvement
+  ## <file name(1)>
+  - <Suggestions for Improvement (1)>
+  - <Suggestions for Improvement (2)>
+  ## <file name(2)>
+  - <Suggestions for Improvement(1)>
+  - <Suggestions for Improvement(2)>`;
+}
 
     core.startGroup('Git Update Status')
     await Exec('git', ['fetch', 'origin', github.context.payload.pull_request?.base.sha])
