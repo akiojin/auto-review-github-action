@@ -4184,6 +4184,1182 @@ exports.isTokenCredential = isTokenCredential;
 
 /***/ }),
 
+/***/ 7094:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+var logger$1 = __nccwpck_require__(3233);
+var abortController = __nccwpck_require__(2557);
+var coreUtil = __nccwpck_require__(1333);
+
+// Copyright (c) Microsoft Corporation.
+/**
+ * The `@azure/logger` configuration for this package.
+ * @internal
+ */
+const logger = logger$1.createClientLogger("core-lro");
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+/**
+ * The default time interval to wait before sending the next polling request.
+ */
+const POLL_INTERVAL_IN_MS = 2000;
+/**
+ * The closed set of terminal states.
+ */
+const terminalStates = ["succeeded", "canceled", "failed"];
+
+// Copyright (c) Microsoft Corporation.
+/**
+ * Deserializes the state
+ */
+function deserializeState(serializedState) {
+    try {
+        return JSON.parse(serializedState).state;
+    }
+    catch (e) {
+        throw new Error(`Unable to deserialize input state: ${serializedState}`);
+    }
+}
+function setStateError(inputs) {
+    const { state, stateProxy, isOperationError } = inputs;
+    return (error) => {
+        if (isOperationError(error)) {
+            stateProxy.setError(state, error);
+            stateProxy.setFailed(state);
+        }
+        throw error;
+    };
+}
+function appendReadableErrorMessage(currentMessage, innerMessage) {
+    let message = currentMessage;
+    if (message.slice(-1) !== ".") {
+        message = message + ".";
+    }
+    return message + " " + innerMessage;
+}
+function simplifyError(err) {
+    let message = err.message;
+    let code = err.code;
+    let curErr = err;
+    while (curErr.innererror) {
+        curErr = curErr.innererror;
+        code = curErr.code;
+        message = appendReadableErrorMessage(message, curErr.message);
+    }
+    return {
+        code,
+        message,
+    };
+}
+function processOperationStatus(result) {
+    const { state, stateProxy, status, isDone, processResult, getError, response, setErrorAsResult } = result;
+    switch (status) {
+        case "succeeded": {
+            stateProxy.setSucceeded(state);
+            break;
+        }
+        case "failed": {
+            const err = getError === null || getError === void 0 ? void 0 : getError(response);
+            let postfix = "";
+            if (err) {
+                const { code, message } = simplifyError(err);
+                postfix = `. ${code}. ${message}`;
+            }
+            const errStr = `The long-running operation has failed${postfix}`;
+            stateProxy.setError(state, new Error(errStr));
+            stateProxy.setFailed(state);
+            logger.warning(errStr);
+            break;
+        }
+        case "canceled": {
+            stateProxy.setCanceled(state);
+            break;
+        }
+    }
+    if ((isDone === null || isDone === void 0 ? void 0 : isDone(response, state)) ||
+        (isDone === undefined &&
+            ["succeeded", "canceled"].concat(setErrorAsResult ? [] : ["failed"]).includes(status))) {
+        stateProxy.setResult(state, buildResult({
+            response,
+            state,
+            processResult,
+        }));
+    }
+}
+function buildResult(inputs) {
+    const { processResult, response, state } = inputs;
+    return processResult ? processResult(response, state) : response;
+}
+/**
+ * Initiates the long-running operation.
+ */
+async function initOperation(inputs) {
+    const { init, stateProxy, processResult, getOperationStatus, withOperationLocation, setErrorAsResult, } = inputs;
+    const { operationLocation, resourceLocation, metadata, response } = await init();
+    if (operationLocation)
+        withOperationLocation === null || withOperationLocation === void 0 ? void 0 : withOperationLocation(operationLocation, false);
+    const config = {
+        metadata,
+        operationLocation,
+        resourceLocation,
+    };
+    logger.verbose(`LRO: Operation description:`, config);
+    const state = stateProxy.initState(config);
+    const status = getOperationStatus({ response, state, operationLocation });
+    processOperationStatus({ state, status, stateProxy, response, setErrorAsResult, processResult });
+    return state;
+}
+async function pollOperationHelper(inputs) {
+    const { poll, state, stateProxy, operationLocation, getOperationStatus, getResourceLocation, isOperationError, options, } = inputs;
+    const response = await poll(operationLocation, options).catch(setStateError({
+        state,
+        stateProxy,
+        isOperationError,
+    }));
+    const status = getOperationStatus(response, state);
+    logger.verbose(`LRO: Status:\n\tPolling from: ${state.config.operationLocation}\n\tOperation status: ${status}\n\tPolling status: ${terminalStates.includes(status) ? "Stopped" : "Running"}`);
+    if (status === "succeeded") {
+        const resourceLocation = getResourceLocation(response, state);
+        if (resourceLocation !== undefined) {
+            return {
+                response: await poll(resourceLocation).catch(setStateError({ state, stateProxy, isOperationError })),
+                status,
+            };
+        }
+    }
+    return { response, status };
+}
+/** Polls the long-running operation. */
+async function pollOperation(inputs) {
+    const { poll, state, stateProxy, options, getOperationStatus, getResourceLocation, getOperationLocation, isOperationError, withOperationLocation, getPollingInterval, processResult, getError, updateState, setDelay, isDone, setErrorAsResult, } = inputs;
+    const { operationLocation } = state.config;
+    if (operationLocation !== undefined) {
+        const { response, status } = await pollOperationHelper({
+            poll,
+            getOperationStatus,
+            state,
+            stateProxy,
+            operationLocation,
+            getResourceLocation,
+            isOperationError,
+            options,
+        });
+        processOperationStatus({
+            status,
+            response,
+            state,
+            stateProxy,
+            isDone,
+            processResult,
+            getError,
+            setErrorAsResult,
+        });
+        if (!terminalStates.includes(status)) {
+            const intervalInMs = getPollingInterval === null || getPollingInterval === void 0 ? void 0 : getPollingInterval(response);
+            if (intervalInMs)
+                setDelay(intervalInMs);
+            const location = getOperationLocation === null || getOperationLocation === void 0 ? void 0 : getOperationLocation(response, state);
+            if (location !== undefined) {
+                const isUpdated = operationLocation !== location;
+                state.config.operationLocation = location;
+                withOperationLocation === null || withOperationLocation === void 0 ? void 0 : withOperationLocation(location, isUpdated);
+            }
+            else
+                withOperationLocation === null || withOperationLocation === void 0 ? void 0 : withOperationLocation(operationLocation, false);
+        }
+        updateState === null || updateState === void 0 ? void 0 : updateState(state, response);
+    }
+}
+
+// Copyright (c) Microsoft Corporation.
+function getOperationLocationPollingUrl(inputs) {
+    const { azureAsyncOperation, operationLocation } = inputs;
+    return operationLocation !== null && operationLocation !== void 0 ? operationLocation : azureAsyncOperation;
+}
+function getLocationHeader(rawResponse) {
+    return rawResponse.headers["location"];
+}
+function getOperationLocationHeader(rawResponse) {
+    return rawResponse.headers["operation-location"];
+}
+function getAzureAsyncOperationHeader(rawResponse) {
+    return rawResponse.headers["azure-asyncoperation"];
+}
+function findResourceLocation(inputs) {
+    var _a;
+    const { location, requestMethod, requestPath, resourceLocationConfig } = inputs;
+    switch (requestMethod) {
+        case "PUT": {
+            return requestPath;
+        }
+        case "DELETE": {
+            return undefined;
+        }
+        case "PATCH": {
+            return (_a = getDefault()) !== null && _a !== void 0 ? _a : requestPath;
+        }
+        default: {
+            return getDefault();
+        }
+    }
+    function getDefault() {
+        switch (resourceLocationConfig) {
+            case "azure-async-operation": {
+                return undefined;
+            }
+            case "original-uri": {
+                return requestPath;
+            }
+            case "location":
+            default: {
+                return location;
+            }
+        }
+    }
+}
+function inferLroMode(inputs) {
+    const { rawResponse, requestMethod, requestPath, resourceLocationConfig } = inputs;
+    const operationLocation = getOperationLocationHeader(rawResponse);
+    const azureAsyncOperation = getAzureAsyncOperationHeader(rawResponse);
+    const pollingUrl = getOperationLocationPollingUrl({ operationLocation, azureAsyncOperation });
+    const location = getLocationHeader(rawResponse);
+    const normalizedRequestMethod = requestMethod === null || requestMethod === void 0 ? void 0 : requestMethod.toLocaleUpperCase();
+    if (pollingUrl !== undefined) {
+        return {
+            mode: "OperationLocation",
+            operationLocation: pollingUrl,
+            resourceLocation: findResourceLocation({
+                requestMethod: normalizedRequestMethod,
+                location,
+                requestPath,
+                resourceLocationConfig,
+            }),
+        };
+    }
+    else if (location !== undefined) {
+        return {
+            mode: "ResourceLocation",
+            operationLocation: location,
+        };
+    }
+    else if (normalizedRequestMethod === "PUT" && requestPath) {
+        return {
+            mode: "Body",
+            operationLocation: requestPath,
+        };
+    }
+    else {
+        return undefined;
+    }
+}
+function transformStatus(inputs) {
+    const { status, statusCode } = inputs;
+    if (typeof status !== "string" && status !== undefined) {
+        throw new Error(`Polling was unsuccessful. Expected status to have a string value or no value but it has instead: ${status}. This doesn't necessarily indicate the operation has failed. Check your Azure subscription or resource status for more information.`);
+    }
+    switch (status === null || status === void 0 ? void 0 : status.toLocaleLowerCase()) {
+        case undefined:
+            return toOperationStatus(statusCode);
+        case "succeeded":
+            return "succeeded";
+        case "failed":
+            return "failed";
+        case "running":
+        case "accepted":
+        case "started":
+        case "canceling":
+        case "cancelling":
+            return "running";
+        case "canceled":
+        case "cancelled":
+            return "canceled";
+        default: {
+            logger.verbose(`LRO: unrecognized operation status: ${status}`);
+            return status;
+        }
+    }
+}
+function getStatus(rawResponse) {
+    var _a;
+    const { status } = (_a = rawResponse.body) !== null && _a !== void 0 ? _a : {};
+    return transformStatus({ status, statusCode: rawResponse.statusCode });
+}
+function getProvisioningState(rawResponse) {
+    var _a, _b;
+    const { properties, provisioningState } = (_a = rawResponse.body) !== null && _a !== void 0 ? _a : {};
+    const status = (_b = properties === null || properties === void 0 ? void 0 : properties.provisioningState) !== null && _b !== void 0 ? _b : provisioningState;
+    return transformStatus({ status, statusCode: rawResponse.statusCode });
+}
+function toOperationStatus(statusCode) {
+    if (statusCode === 202) {
+        return "running";
+    }
+    else if (statusCode < 300) {
+        return "succeeded";
+    }
+    else {
+        return "failed";
+    }
+}
+function parseRetryAfter({ rawResponse }) {
+    const retryAfter = rawResponse.headers["retry-after"];
+    if (retryAfter !== undefined) {
+        // Retry-After header value is either in HTTP date format, or in seconds
+        const retryAfterInSeconds = parseInt(retryAfter);
+        return isNaN(retryAfterInSeconds)
+            ? calculatePollingIntervalFromDate(new Date(retryAfter))
+            : retryAfterInSeconds * 1000;
+    }
+    return undefined;
+}
+function getErrorFromResponse(response) {
+    const error = response.flatResponse.error;
+    if (!error) {
+        logger.warning(`The long-running operation failed but there is no error property in the response's body`);
+        return;
+    }
+    if (!error.code || !error.message) {
+        logger.warning(`The long-running operation failed but the error property in the response's body doesn't contain code or message`);
+        return;
+    }
+    return error;
+}
+function calculatePollingIntervalFromDate(retryAfterDate) {
+    const timeNow = Math.floor(new Date().getTime());
+    const retryAfterTime = retryAfterDate.getTime();
+    if (timeNow < retryAfterTime) {
+        return retryAfterTime - timeNow;
+    }
+    return undefined;
+}
+function getStatusFromInitialResponse(inputs) {
+    const { response, state, operationLocation } = inputs;
+    function helper() {
+        var _a;
+        const mode = (_a = state.config.metadata) === null || _a === void 0 ? void 0 : _a["mode"];
+        switch (mode) {
+            case undefined:
+                return toOperationStatus(response.rawResponse.statusCode);
+            case "Body":
+                return getOperationStatus(response, state);
+            default:
+                return "running";
+        }
+    }
+    const status = helper();
+    return status === "running" && operationLocation === undefined ? "succeeded" : status;
+}
+/**
+ * Initiates the long-running operation.
+ */
+async function initHttpOperation(inputs) {
+    const { stateProxy, resourceLocationConfig, processResult, lro, setErrorAsResult } = inputs;
+    return initOperation({
+        init: async () => {
+            const response = await lro.sendInitialRequest();
+            const config = inferLroMode({
+                rawResponse: response.rawResponse,
+                requestPath: lro.requestPath,
+                requestMethod: lro.requestMethod,
+                resourceLocationConfig,
+            });
+            return Object.assign({ response, operationLocation: config === null || config === void 0 ? void 0 : config.operationLocation, resourceLocation: config === null || config === void 0 ? void 0 : config.resourceLocation }, ((config === null || config === void 0 ? void 0 : config.mode) ? { metadata: { mode: config.mode } } : {}));
+        },
+        stateProxy,
+        processResult: processResult
+            ? ({ flatResponse }, state) => processResult(flatResponse, state)
+            : ({ flatResponse }) => flatResponse,
+        getOperationStatus: getStatusFromInitialResponse,
+        setErrorAsResult,
+    });
+}
+function getOperationLocation({ rawResponse }, state) {
+    var _a;
+    const mode = (_a = state.config.metadata) === null || _a === void 0 ? void 0 : _a["mode"];
+    switch (mode) {
+        case "OperationLocation": {
+            return getOperationLocationPollingUrl({
+                operationLocation: getOperationLocationHeader(rawResponse),
+                azureAsyncOperation: getAzureAsyncOperationHeader(rawResponse),
+            });
+        }
+        case "ResourceLocation": {
+            return getLocationHeader(rawResponse);
+        }
+        case "Body":
+        default: {
+            return undefined;
+        }
+    }
+}
+function getOperationStatus({ rawResponse }, state) {
+    var _a;
+    const mode = (_a = state.config.metadata) === null || _a === void 0 ? void 0 : _a["mode"];
+    switch (mode) {
+        case "OperationLocation": {
+            return getStatus(rawResponse);
+        }
+        case "ResourceLocation": {
+            return toOperationStatus(rawResponse.statusCode);
+        }
+        case "Body": {
+            return getProvisioningState(rawResponse);
+        }
+        default:
+            throw new Error(`Internal error: Unexpected operation mode: ${mode}`);
+    }
+}
+function getResourceLocation({ flatResponse }, state) {
+    if (typeof flatResponse === "object") {
+        const resourceLocation = flatResponse.resourceLocation;
+        if (resourceLocation !== undefined) {
+            state.config.resourceLocation = resourceLocation;
+        }
+    }
+    return state.config.resourceLocation;
+}
+function isOperationError(e) {
+    return e.name === "RestError";
+}
+/** Polls the long-running operation. */
+async function pollHttpOperation(inputs) {
+    const { lro, stateProxy, options, processResult, updateState, setDelay, state, setErrorAsResult, } = inputs;
+    return pollOperation({
+        state,
+        stateProxy,
+        setDelay,
+        processResult: processResult
+            ? ({ flatResponse }, inputState) => processResult(flatResponse, inputState)
+            : ({ flatResponse }) => flatResponse,
+        getError: getErrorFromResponse,
+        updateState,
+        getPollingInterval: parseRetryAfter,
+        getOperationLocation,
+        getOperationStatus,
+        isOperationError,
+        getResourceLocation,
+        options,
+        /**
+         * The expansion here is intentional because `lro` could be an object that
+         * references an inner this, so we need to preserve a reference to it.
+         */
+        poll: async (location, inputOptions) => lro.sendPollRequest(location, inputOptions),
+        setErrorAsResult,
+    });
+}
+
+// Copyright (c) Microsoft Corporation.
+const createStateProxy$1 = () => ({
+    /**
+     * The state at this point is created to be of type OperationState<TResult>.
+     * It will be updated later to be of type TState when the
+     * customer-provided callback, `updateState`, is called during polling.
+     */
+    initState: (config) => ({ status: "running", config }),
+    setCanceled: (state) => (state.status = "canceled"),
+    setError: (state, error) => (state.error = error),
+    setResult: (state, result) => (state.result = result),
+    setRunning: (state) => (state.status = "running"),
+    setSucceeded: (state) => (state.status = "succeeded"),
+    setFailed: (state) => (state.status = "failed"),
+    getError: (state) => state.error,
+    getResult: (state) => state.result,
+    isCanceled: (state) => state.status === "canceled",
+    isFailed: (state) => state.status === "failed",
+    isRunning: (state) => state.status === "running",
+    isSucceeded: (state) => state.status === "succeeded",
+});
+/**
+ * Returns a poller factory.
+ */
+function buildCreatePoller(inputs) {
+    const { getOperationLocation, getStatusFromInitialResponse, getStatusFromPollResponse, isOperationError, getResourceLocation, getPollingInterval, getError, resolveOnUnsuccessful, } = inputs;
+    return async ({ init, poll }, options) => {
+        const { processResult, updateState, withOperationLocation: withOperationLocationCallback, intervalInMs = POLL_INTERVAL_IN_MS, restoreFrom, } = options || {};
+        const stateProxy = createStateProxy$1();
+        const withOperationLocation = withOperationLocationCallback
+            ? (() => {
+                let called = false;
+                return (operationLocation, isUpdated) => {
+                    if (isUpdated)
+                        withOperationLocationCallback(operationLocation);
+                    else if (!called)
+                        withOperationLocationCallback(operationLocation);
+                    called = true;
+                };
+            })()
+            : undefined;
+        const state = restoreFrom
+            ? deserializeState(restoreFrom)
+            : await initOperation({
+                init,
+                stateProxy,
+                processResult,
+                getOperationStatus: getStatusFromInitialResponse,
+                withOperationLocation,
+                setErrorAsResult: !resolveOnUnsuccessful,
+            });
+        let resultPromise;
+        const abortController$1 = new abortController.AbortController();
+        const handlers = new Map();
+        const handleProgressEvents = async () => handlers.forEach((h) => h(state));
+        const cancelErrMsg = "Operation was canceled";
+        let currentPollIntervalInMs = intervalInMs;
+        const poller = {
+            getOperationState: () => state,
+            getResult: () => state.result,
+            isDone: () => ["succeeded", "failed", "canceled"].includes(state.status),
+            isStopped: () => resultPromise === undefined,
+            stopPolling: () => {
+                abortController$1.abort();
+            },
+            toString: () => JSON.stringify({
+                state,
+            }),
+            onProgress: (callback) => {
+                const s = Symbol();
+                handlers.set(s, callback);
+                return () => handlers.delete(s);
+            },
+            pollUntilDone: (pollOptions) => (resultPromise !== null && resultPromise !== void 0 ? resultPromise : (resultPromise = (async () => {
+                const { abortSignal: inputAbortSignal } = pollOptions || {};
+                const { signal: abortSignal } = inputAbortSignal
+                    ? new abortController.AbortController([inputAbortSignal, abortController$1.signal])
+                    : abortController$1;
+                if (!poller.isDone()) {
+                    await poller.poll({ abortSignal });
+                    while (!poller.isDone()) {
+                        await coreUtil.delay(currentPollIntervalInMs, { abortSignal });
+                        await poller.poll({ abortSignal });
+                    }
+                }
+                if (resolveOnUnsuccessful) {
+                    return poller.getResult();
+                }
+                else {
+                    switch (state.status) {
+                        case "succeeded":
+                            return poller.getResult();
+                        case "canceled":
+                            throw new Error(cancelErrMsg);
+                        case "failed":
+                            throw state.error;
+                        case "notStarted":
+                        case "running":
+                            throw new Error(`Polling completed without succeeding or failing`);
+                    }
+                }
+            })().finally(() => {
+                resultPromise = undefined;
+            }))),
+            async poll(pollOptions) {
+                if (resolveOnUnsuccessful) {
+                    if (poller.isDone())
+                        return;
+                }
+                else {
+                    switch (state.status) {
+                        case "succeeded":
+                            return;
+                        case "canceled":
+                            throw new Error(cancelErrMsg);
+                        case "failed":
+                            throw state.error;
+                    }
+                }
+                await pollOperation({
+                    poll,
+                    state,
+                    stateProxy,
+                    getOperationLocation,
+                    isOperationError,
+                    withOperationLocation,
+                    getPollingInterval,
+                    getOperationStatus: getStatusFromPollResponse,
+                    getResourceLocation,
+                    processResult,
+                    getError,
+                    updateState,
+                    options: pollOptions,
+                    setDelay: (pollIntervalInMs) => {
+                        currentPollIntervalInMs = pollIntervalInMs;
+                    },
+                    setErrorAsResult: !resolveOnUnsuccessful,
+                });
+                await handleProgressEvents();
+                if (!resolveOnUnsuccessful) {
+                    switch (state.status) {
+                        case "canceled":
+                            throw new Error(cancelErrMsg);
+                        case "failed":
+                            throw state.error;
+                    }
+                }
+            },
+        };
+        return poller;
+    };
+}
+
+// Copyright (c) Microsoft Corporation.
+/**
+ * Creates a poller that can be used to poll a long-running operation.
+ * @param lro - Description of the long-running operation
+ * @param options - options to configure the poller
+ * @returns an initialized poller
+ */
+async function createHttpPoller(lro, options) {
+    const { resourceLocationConfig, intervalInMs, processResult, restoreFrom, updateState, withOperationLocation, resolveOnUnsuccessful = false, } = options || {};
+    return buildCreatePoller({
+        getStatusFromInitialResponse,
+        getStatusFromPollResponse: getOperationStatus,
+        isOperationError,
+        getOperationLocation,
+        getResourceLocation,
+        getPollingInterval: parseRetryAfter,
+        getError: getErrorFromResponse,
+        resolveOnUnsuccessful,
+    })({
+        init: async () => {
+            const response = await lro.sendInitialRequest();
+            const config = inferLroMode({
+                rawResponse: response.rawResponse,
+                requestPath: lro.requestPath,
+                requestMethod: lro.requestMethod,
+                resourceLocationConfig,
+            });
+            return Object.assign({ response, operationLocation: config === null || config === void 0 ? void 0 : config.operationLocation, resourceLocation: config === null || config === void 0 ? void 0 : config.resourceLocation }, ((config === null || config === void 0 ? void 0 : config.mode) ? { metadata: { mode: config.mode } } : {}));
+        },
+        poll: lro.sendPollRequest,
+    }, {
+        intervalInMs,
+        withOperationLocation,
+        restoreFrom,
+        updateState,
+        processResult: processResult
+            ? ({ flatResponse }, state) => processResult(flatResponse, state)
+            : ({ flatResponse }) => flatResponse,
+    });
+}
+
+// Copyright (c) Microsoft Corporation.
+const createStateProxy = () => ({
+    initState: (config) => ({ config, isStarted: true }),
+    setCanceled: (state) => (state.isCancelled = true),
+    setError: (state, error) => (state.error = error),
+    setResult: (state, result) => (state.result = result),
+    setRunning: (state) => (state.isStarted = true),
+    setSucceeded: (state) => (state.isCompleted = true),
+    setFailed: () => {
+        /** empty body */
+    },
+    getError: (state) => state.error,
+    getResult: (state) => state.result,
+    isCanceled: (state) => !!state.isCancelled,
+    isFailed: (state) => !!state.error,
+    isRunning: (state) => !!state.isStarted,
+    isSucceeded: (state) => Boolean(state.isCompleted && !state.isCancelled && !state.error),
+});
+class GenericPollOperation {
+    constructor(state, lro, setErrorAsResult, lroResourceLocationConfig, processResult, updateState, isDone) {
+        this.state = state;
+        this.lro = lro;
+        this.setErrorAsResult = setErrorAsResult;
+        this.lroResourceLocationConfig = lroResourceLocationConfig;
+        this.processResult = processResult;
+        this.updateState = updateState;
+        this.isDone = isDone;
+    }
+    setPollerConfig(pollerConfig) {
+        this.pollerConfig = pollerConfig;
+    }
+    async update(options) {
+        var _a;
+        const stateProxy = createStateProxy();
+        if (!this.state.isStarted) {
+            this.state = Object.assign(Object.assign({}, this.state), (await initHttpOperation({
+                lro: this.lro,
+                stateProxy,
+                resourceLocationConfig: this.lroResourceLocationConfig,
+                processResult: this.processResult,
+                setErrorAsResult: this.setErrorAsResult,
+            })));
+        }
+        const updateState = this.updateState;
+        const isDone = this.isDone;
+        if (!this.state.isCompleted && this.state.error === undefined) {
+            await pollHttpOperation({
+                lro: this.lro,
+                state: this.state,
+                stateProxy,
+                processResult: this.processResult,
+                updateState: updateState
+                    ? (state, { rawResponse }) => updateState(state, rawResponse)
+                    : undefined,
+                isDone: isDone
+                    ? ({ flatResponse }, state) => isDone(flatResponse, state)
+                    : undefined,
+                options,
+                setDelay: (intervalInMs) => {
+                    this.pollerConfig.intervalInMs = intervalInMs;
+                },
+                setErrorAsResult: this.setErrorAsResult,
+            });
+        }
+        (_a = options === null || options === void 0 ? void 0 : options.fireProgress) === null || _a === void 0 ? void 0 : _a.call(options, this.state);
+        return this;
+    }
+    async cancel() {
+        logger.error("`cancelOperation` is deprecated because it wasn't implemented");
+        return this;
+    }
+    /**
+     * Serializes the Poller operation.
+     */
+    toString() {
+        return JSON.stringify({
+            state: this.state,
+        });
+    }
+}
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+/**
+ * When a poller is manually stopped through the `stopPolling` method,
+ * the poller will be rejected with an instance of the PollerStoppedError.
+ */
+class PollerStoppedError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "PollerStoppedError";
+        Object.setPrototypeOf(this, PollerStoppedError.prototype);
+    }
+}
+/**
+ * When the operation is cancelled, the poller will be rejected with an instance
+ * of the PollerCancelledError.
+ */
+class PollerCancelledError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "PollerCancelledError";
+        Object.setPrototypeOf(this, PollerCancelledError.prototype);
+    }
+}
+/**
+ * A class that represents the definition of a program that polls through consecutive requests
+ * until it reaches a state of completion.
+ *
+ * A poller can be executed manually, by polling request by request by calling to the `poll()` method repeatedly, until its operation is completed.
+ * It also provides a way to wait until the operation completes, by calling `pollUntilDone()` and waiting until the operation finishes.
+ * Pollers can also request the cancellation of the ongoing process to whom is providing the underlying long running operation.
+ *
+ * ```ts
+ * const poller = new MyPoller();
+ *
+ * // Polling just once:
+ * await poller.poll();
+ *
+ * // We can try to cancel the request here, by calling:
+ * //
+ * //     await poller.cancelOperation();
+ * //
+ *
+ * // Getting the final result:
+ * const result = await poller.pollUntilDone();
+ * ```
+ *
+ * The Poller is defined by two types, a type representing the state of the poller, which
+ * must include a basic set of properties from `PollOperationState<TResult>`,
+ * and a return type defined by `TResult`, which can be anything.
+ *
+ * The Poller class implements the `PollerLike` interface, which allows poller implementations to avoid having
+ * to export the Poller's class directly, and instead only export the already instantiated poller with the PollerLike type.
+ *
+ * ```ts
+ * class Client {
+ *   public async makePoller: PollerLike<MyOperationState, MyResult> {
+ *     const poller = new MyPoller({});
+ *     // It might be preferred to return the poller after the first request is made,
+ *     // so that some information can be obtained right away.
+ *     await poller.poll();
+ *     return poller;
+ *   }
+ * }
+ *
+ * const poller: PollerLike<MyOperationState, MyResult> = myClient.makePoller();
+ * ```
+ *
+ * A poller can be created through its constructor, then it can be polled until it's completed.
+ * At any point in time, the state of the poller can be obtained without delay through the getOperationState method.
+ * At any point in time, the intermediate forms of the result type can be requested without delay.
+ * Once the underlying operation is marked as completed, the poller will stop and the final value will be returned.
+ *
+ * ```ts
+ * const poller = myClient.makePoller();
+ * const state: MyOperationState = poller.getOperationState();
+ *
+ * // The intermediate result can be obtained at any time.
+ * const result: MyResult | undefined = poller.getResult();
+ *
+ * // The final result can only be obtained after the poller finishes.
+ * const result: MyResult = await poller.pollUntilDone();
+ * ```
+ *
+ */
+// eslint-disable-next-line no-use-before-define
+class Poller {
+    /**
+     * A poller needs to be initialized by passing in at least the basic properties of the `PollOperation<TState, TResult>`.
+     *
+     * When writing an implementation of a Poller, this implementation needs to deal with the initialization
+     * of any custom state beyond the basic definition of the poller. The basic poller assumes that the poller's
+     * operation has already been defined, at least its basic properties. The code below shows how to approach
+     * the definition of the constructor of a new custom poller.
+     *
+     * ```ts
+     * export class MyPoller extends Poller<MyOperationState, string> {
+     *   constructor({
+     *     // Anything you might need outside of the basics
+     *   }) {
+     *     let state: MyOperationState = {
+     *       privateProperty: private,
+     *       publicProperty: public,
+     *     };
+     *
+     *     const operation = {
+     *       state,
+     *       update,
+     *       cancel,
+     *       toString
+     *     }
+     *
+     *     // Sending the operation to the parent's constructor.
+     *     super(operation);
+     *
+     *     // You can assign more local properties here.
+     *   }
+     * }
+     * ```
+     *
+     * Inside of this constructor, a new promise is created. This will be used to
+     * tell the user when the poller finishes (see `pollUntilDone()`). The promise's
+     * resolve and reject methods are also used internally to control when to resolve
+     * or reject anyone waiting for the poller to finish.
+     *
+     * The constructor of a custom implementation of a poller is where any serialized version of
+     * a previous poller's operation should be deserialized into the operation sent to the
+     * base constructor. For example:
+     *
+     * ```ts
+     * export class MyPoller extends Poller<MyOperationState, string> {
+     *   constructor(
+     *     baseOperation: string | undefined
+     *   ) {
+     *     let state: MyOperationState = {};
+     *     if (baseOperation) {
+     *       state = {
+     *         ...JSON.parse(baseOperation).state,
+     *         ...state
+     *       };
+     *     }
+     *     const operation = {
+     *       state,
+     *       // ...
+     *     }
+     *     super(operation);
+     *   }
+     * }
+     * ```
+     *
+     * @param operation - Must contain the basic properties of `PollOperation<State, TResult>`.
+     */
+    constructor(operation) {
+        /** controls whether to throw an error if the operation failed or was canceled. */
+        this.resolveOnUnsuccessful = false;
+        this.stopped = true;
+        this.pollProgressCallbacks = [];
+        this.operation = operation;
+        this.promise = new Promise((resolve, reject) => {
+            this.resolve = resolve;
+            this.reject = reject;
+        });
+        // This prevents the UnhandledPromiseRejectionWarning in node.js from being thrown.
+        // The above warning would get thrown if `poller.poll` is called, it returns an error,
+        // and pullUntilDone did not have a .catch or await try/catch on it's return value.
+        this.promise.catch(() => {
+            /* intentionally blank */
+        });
+    }
+    /**
+     * Starts a loop that will break only if the poller is done
+     * or if the poller is stopped.
+     */
+    async startPolling(pollOptions = {}) {
+        if (this.stopped) {
+            this.stopped = false;
+        }
+        while (!this.isStopped() && !this.isDone()) {
+            await this.poll(pollOptions);
+            await this.delay();
+        }
+    }
+    /**
+     * pollOnce does one polling, by calling to the update method of the underlying
+     * poll operation to make any relevant change effective.
+     *
+     * It only optionally receives an object with an abortSignal property, from \@azure/abort-controller's AbortSignalLike.
+     *
+     * @param options - Optional properties passed to the operation's update method.
+     */
+    async pollOnce(options = {}) {
+        if (!this.isDone()) {
+            this.operation = await this.operation.update({
+                abortSignal: options.abortSignal,
+                fireProgress: this.fireProgress.bind(this),
+            });
+        }
+        this.processUpdatedState();
+    }
+    /**
+     * fireProgress calls the functions passed in via onProgress the method of the poller.
+     *
+     * It loops over all of the callbacks received from onProgress, and executes them, sending them
+     * the current operation state.
+     *
+     * @param state - The current operation state.
+     */
+    fireProgress(state) {
+        for (const callback of this.pollProgressCallbacks) {
+            callback(state);
+        }
+    }
+    /**
+     * Invokes the underlying operation's cancel method.
+     */
+    async cancelOnce(options = {}) {
+        this.operation = await this.operation.cancel(options);
+    }
+    /**
+     * Returns a promise that will resolve once a single polling request finishes.
+     * It does this by calling the update method of the Poller's operation.
+     *
+     * It only optionally receives an object with an abortSignal property, from \@azure/abort-controller's AbortSignalLike.
+     *
+     * @param options - Optional properties passed to the operation's update method.
+     */
+    poll(options = {}) {
+        if (!this.pollOncePromise) {
+            this.pollOncePromise = this.pollOnce(options);
+            const clearPollOncePromise = () => {
+                this.pollOncePromise = undefined;
+            };
+            this.pollOncePromise.then(clearPollOncePromise, clearPollOncePromise).catch(this.reject);
+        }
+        return this.pollOncePromise;
+    }
+    processUpdatedState() {
+        if (this.operation.state.error) {
+            this.stopped = true;
+            if (!this.resolveOnUnsuccessful) {
+                this.reject(this.operation.state.error);
+                throw this.operation.state.error;
+            }
+        }
+        if (this.operation.state.isCancelled) {
+            this.stopped = true;
+            if (!this.resolveOnUnsuccessful) {
+                const error = new PollerCancelledError("Operation was canceled");
+                this.reject(error);
+                throw error;
+            }
+        }
+        if (this.isDone() && this.resolve) {
+            // If the poller has finished polling, this means we now have a result.
+            // However, it can be the case that TResult is instantiated to void, so
+            // we are not expecting a result anyway. To assert that we might not
+            // have a result eventually after finishing polling, we cast the result
+            // to TResult.
+            this.resolve(this.getResult());
+        }
+    }
+    /**
+     * Returns a promise that will resolve once the underlying operation is completed.
+     */
+    async pollUntilDone(pollOptions = {}) {
+        if (this.stopped) {
+            this.startPolling(pollOptions).catch(this.reject);
+        }
+        // This is needed because the state could have been updated by
+        // `cancelOperation`, e.g. the operation is canceled or an error occurred.
+        this.processUpdatedState();
+        return this.promise;
+    }
+    /**
+     * Invokes the provided callback after each polling is completed,
+     * sending the current state of the poller's operation.
+     *
+     * It returns a method that can be used to stop receiving updates on the given callback function.
+     */
+    onProgress(callback) {
+        this.pollProgressCallbacks.push(callback);
+        return () => {
+            this.pollProgressCallbacks = this.pollProgressCallbacks.filter((c) => c !== callback);
+        };
+    }
+    /**
+     * Returns true if the poller has finished polling.
+     */
+    isDone() {
+        const state = this.operation.state;
+        return Boolean(state.isCompleted || state.isCancelled || state.error);
+    }
+    /**
+     * Stops the poller from continuing to poll.
+     */
+    stopPolling() {
+        if (!this.stopped) {
+            this.stopped = true;
+            if (this.reject) {
+                this.reject(new PollerStoppedError("This poller is already stopped"));
+            }
+        }
+    }
+    /**
+     * Returns true if the poller is stopped.
+     */
+    isStopped() {
+        return this.stopped;
+    }
+    /**
+     * Attempts to cancel the underlying operation.
+     *
+     * It only optionally receives an object with an abortSignal property, from \@azure/abort-controller's AbortSignalLike.
+     *
+     * If it's called again before it finishes, it will throw an error.
+     *
+     * @param options - Optional properties passed to the operation's update method.
+     */
+    cancelOperation(options = {}) {
+        if (!this.cancelPromise) {
+            this.cancelPromise = this.cancelOnce(options);
+        }
+        else if (options.abortSignal) {
+            throw new Error("A cancel request is currently pending");
+        }
+        return this.cancelPromise;
+    }
+    /**
+     * Returns the state of the operation.
+     *
+     * Even though TState will be the same type inside any of the methods of any extension of the Poller class,
+     * implementations of the pollers can customize what's shared with the public by writing their own
+     * version of the `getOperationState` method, and by defining two types, one representing the internal state of the poller
+     * and a public type representing a safe to share subset of the properties of the internal state.
+     * Their definition of getOperationState can then return their public type.
+     *
+     * Example:
+     *
+     * ```ts
+     * // Let's say we have our poller's operation state defined as:
+     * interface MyOperationState extends PollOperationState<ResultType> {
+     *   privateProperty?: string;
+     *   publicProperty?: string;
+     * }
+     *
+     * // To allow us to have a true separation of public and private state, we have to define another interface:
+     * interface PublicState extends PollOperationState<ResultType> {
+     *   publicProperty?: string;
+     * }
+     *
+     * // Then, we define our Poller as follows:
+     * export class MyPoller extends Poller<MyOperationState, ResultType> {
+     *   // ... More content is needed here ...
+     *
+     *   public getOperationState(): PublicState {
+     *     const state: PublicState = this.operation.state;
+     *     return {
+     *       // Properties from PollOperationState<TResult>
+     *       isStarted: state.isStarted,
+     *       isCompleted: state.isCompleted,
+     *       isCancelled: state.isCancelled,
+     *       error: state.error,
+     *       result: state.result,
+     *
+     *       // The only other property needed by PublicState.
+     *       publicProperty: state.publicProperty
+     *     }
+     *   }
+     * }
+     * ```
+     *
+     * You can see this in the tests of this repository, go to the file:
+     * `../test/utils/testPoller.ts`
+     * and look for the getOperationState implementation.
+     */
+    getOperationState() {
+        return this.operation.state;
+    }
+    /**
+     * Returns the result value of the operation,
+     * regardless of the state of the poller.
+     * It can return undefined or an incomplete form of the final TResult value
+     * depending on the implementation.
+     */
+    getResult() {
+        const state = this.operation.state;
+        return state.result;
+    }
+    /**
+     * Returns a serialized version of the poller's operation
+     * by invoking the operation's toString method.
+     */
+    toString() {
+        return this.operation.toString();
+    }
+}
+
+// Copyright (c) Microsoft Corporation.
+/**
+ * The LRO Engine, a class that performs polling.
+ */
+class LroEngine extends Poller {
+    constructor(lro, options) {
+        const { intervalInMs = POLL_INTERVAL_IN_MS, resumeFrom, resolveOnUnsuccessful = false, isDone, lroResourceLocationConfig, processResult, updateState, } = options || {};
+        const state = resumeFrom
+            ? deserializeState(resumeFrom)
+            : {};
+        const operation = new GenericPollOperation(state, lro, !resolveOnUnsuccessful, lroResourceLocationConfig, processResult, updateState, isDone);
+        super(operation);
+        this.resolveOnUnsuccessful = resolveOnUnsuccessful;
+        this.config = { intervalInMs: intervalInMs };
+        operation.setPollerConfig(this.config);
+    }
+    /**
+     * The method used by the poller to wait before attempting to update its operation.
+     */
+    delay() {
+        return new Promise((resolve) => setTimeout(() => resolve(), this.config.intervalInMs));
+    }
+}
+
+exports.LroEngine = LroEngine;
+exports.Poller = Poller;
+exports.PollerCancelledError = PollerCancelledError;
+exports.PollerStoppedError = PollerStoppedError;
+exports.createHttpPoller = createHttpPoller;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
 /***/ 8121:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -23631,6 +24807,49 @@ var coreAuth = __nccwpck_require__(9645);
 var tslib = __nccwpck_require__(4351);
 var coreClient = __nccwpck_require__(4579);
 var logger$1 = __nccwpck_require__(3233);
+var coreLro = __nccwpck_require__(7094);
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+/**
+ * The OpenAIKeyCredential class represents an OpenAI API key
+ * and is used to authenticate into an OpenAI client for
+ * an OpenAI endpoint.
+ */
+class OpenAIKeyCredential {
+    /**
+     * Create an instance of an AzureKeyCredential for use
+     * with a service client.
+     *
+     * @param key - The initial value of the key to use in authentication
+     */
+    constructor(key) {
+        if (!key) {
+            throw new Error("key must be a non-empty string");
+        }
+        this._key = createKey(key);
+    }
+    /**
+     * The value of the key to be used in authentication
+     */
+    get key() {
+        return this._key;
+    }
+    /**
+     * Change the value of the key.
+     *
+     * Updates will take effect upon the next request after
+     * updating the key value.
+     *
+     * @param newKey - The new key value to be used
+     */
+    update(newKey) {
+        this._key = createKey(newKey);
+    }
+}
+function createKey(key) {
+    return key.startsWith("Bearer ") ? key : `Bearer ${key}`;
+}
 
 // Copyright (c) Microsoft Corporation.
 const logger = logger$1.createClientLogger("openai");
@@ -23646,12 +24865,12 @@ const logger = logger$1.createClientLogger("openai");
 function createClient(endpoint, credentials, options = {}) {
     var _a, _b, _c, _d, _e, _f, _g, _h;
     const baseUrl = (_a = options.baseUrl) !== null && _a !== void 0 ? _a : `${endpoint}/openai`;
-    options.apiVersion = (_b = options.apiVersion) !== null && _b !== void 0 ? _b : "2023-06-01-preview";
+    options.apiVersion = (_b = options.apiVersion) !== null && _b !== void 0 ? _b : "2023-08-01-preview";
     options = Object.assign(Object.assign({}, options), { credentials: {
             scopes: (_d = (_c = options.credentials) === null || _c === void 0 ? void 0 : _c.scopes) !== null && _d !== void 0 ? _d : ["https://cognitiveservices.azure.com/.default"],
             apiKeyHeaderName: (_f = (_e = options.credentials) === null || _e === void 0 ? void 0 : _e.apiKeyHeaderName) !== null && _f !== void 0 ? _f : "api-key",
         } });
-    const userAgentInfo = `azsdk-js-openai-rest/1.0.0-beta.3`;
+    const userAgentInfo = `azsdk-js-openai-rest/1.0.0-beta.5`;
     const userAgentPrefix = options.userAgentOptions && options.userAgentOptions.userAgentPrefix
         ? `${options.userAgentOptions.userAgentPrefix} ${userAgentInfo}`
         : `${userAgentInfo}`;
@@ -23670,6 +24889,7 @@ const responseMap = {
     "POST /deployments/{deploymentId}/embeddings": ["200"],
     "POST /deployments/{deploymentId}/completions": ["200"],
     "POST /deployments/{deploymentId}/chat/completions": ["200"],
+    "POST /deployments/{deploymentId}/extensions/chat/completions": ["200"],
     "GET /operations/images/{operationId}": ["200"],
     "POST /images/generations:submit": ["202"],
     "GET /images/generations:submit": ["200", "202"],
@@ -23740,6 +24960,47 @@ function getPathFromMapKey(mapKey) {
 }
 
 // Copyright (c) Microsoft Corporation.
+async function getLongRunningPoller(client, initialResponse, options = {}) {
+    var _a;
+    const poller = {
+        requestMethod: initialResponse.request.method,
+        requestPath: initialResponse.request.url,
+        sendInitialRequest: async () => {
+            // In the case of Rest Clients we are building the LRO poller object from a response that's the reason
+            // we are not triggering the initial request here, just extracting the information from the
+            // response we were provided.
+            return getLroResponse(initialResponse);
+        },
+        sendPollRequest: async (path) => {
+            // This is the callback that is going to be called to poll the service
+            // to get the latest status. We use the client provided and the polling path
+            // which is an opaque URL provided by caller, the service sends this in one of the following headers: operation-location, azure-asyncoperation or location
+            // depending on the lro pattern that the service implements. If non is provided we default to the initial path.
+            const response = await client.pathUnchecked(path !== null && path !== void 0 ? path : initialResponse.request.url).get();
+            const lroResponse = getLroResponse(response);
+            lroResponse.rawResponse.headers["x-ms-original-url"] = initialResponse.request.url;
+            return lroResponse;
+        },
+    };
+    options.resolveOnUnsuccessful = (_a = options.resolveOnUnsuccessful) !== null && _a !== void 0 ? _a : true;
+    return coreLro.createHttpPoller(poller, options);
+}
+/**
+ * Converts a Rest Client response to a response that the LRO implementation understands
+ * @param response - a rest client http response
+ * @returns - An LRO response that the LRO implementation understands
+ */
+function getLroResponse(response) {
+    if (Number.isNaN(response.status)) {
+        throw new TypeError(`Status code of the response is not a number. Value: ${response.status}`);
+    }
+    return {
+        flatResponse: response,
+        rawResponse: Object.assign(Object.assign({}, response), { statusCode: Number.parseInt(response.status), body: response.body }),
+    };
+}
+
+// Copyright (c) Microsoft Corporation.
 /** Azure OpenAI APIs for completions and search */
 function createOpenAI(endpoint, credential, options = {}) {
     const baseUrl = endpoint;
@@ -23748,19 +25009,333 @@ function createOpenAI(endpoint, credential, options = {}) {
 }
 
 // Copyright (c) Microsoft Corporation.
-function _getEmbeddingsSend(context, input, deploymentId, options = { requestOptions: {} }) {
-    var _a, _b, _c;
-    return context.path("/deployments/{deploymentId}/embeddings", deploymentId).post({
-        allowInsecureConnection: (_a = options.requestOptions) === null || _a === void 0 ? void 0 : _a.allowInsecureConnection,
-        skipUrlEncoding: (_b = options.requestOptions) === null || _b === void 0 ? void 0 : _b.skipUrlEncoding,
-        headers: Object.assign({}, (_c = options.requestOptions) === null || _c === void 0 ? void 0 : _c.headers),
-        body: { user: options === null || options === void 0 ? void 0 : options.user, model: options === null || options === void 0 ? void 0 : options.model, input: input },
+// Licensed under the MIT license.
+function getCompletionsResult(body) {
+    var _a;
+    return Object.assign(Object.assign({ id: body["id"], created: new Date(body["created"]) }, (!body["prompt_annotations"]
+        ? {}
+        : {
+            promptFilterResults: body["prompt_annotations"].map((p) => (Object.assign({ promptIndex: p["prompt_index"] }, (!p.content_filter_results
+                ? {}
+                : {
+                    contentFilterResults: deserializeContentFilter(p.content_filter_results),
+                })))),
+        })), { choices: ((_a = body["choices"]) !== null && _a !== void 0 ? _a : []).map((p) => (Object.assign(Object.assign({ text: p["text"], index: p["index"] }, (!p.content_filter_results
+            ? {}
+            : {
+                contentFilterResults: deserializeContentFilter(p.content_filter_results),
+            })), { logprobs: p.logprobs === null
+                ? null
+                : {
+                    tokens: p.logprobs["tokens"],
+                    tokenLogprobs: p.logprobs["token_logprobs"],
+                    topLogprobs: p.logprobs["top_logprobs"],
+                    textOffset: p.logprobs["text_offset"],
+                }, finishReason: p["finish_reason"] }))) });
+}
+function getChatCompletionsResult(body) {
+    var _a;
+    return Object.assign({ id: body["id"], created: new Date(body["created"]), choices: ((_a = body["choices"]) !== null && _a !== void 0 ? _a : []).map((p) => (Object.assign(Object.assign(Object.assign(Object.assign({}, (!p.message ? {} : { message: _deserializeMessage(p.message) })), { index: p["index"], finishReason: p["finish_reason"] }), (!p.delta ? {} : { delta: _deserializeMessage(p.delta) })), (!p.content_filter_results
+            ? {}
+            : { contentFilterResults: deserializeContentFilter(p.content_filter_results) })))) }, (!body["prompt_annotations"]
+        ? {}
+        : {
+            promptFilterResults: body["prompt_annotations"].map((p) => (Object.assign({ promptIndex: p["prompt_index"] }, (!p.content_filter_results
+                ? {}
+                : {
+                    contentFilterResults: deserializeContentFilter(p.content_filter_results),
+                })))),
+        }));
+}
+function _deserializeMessage(message) {
+    var _a, _b;
+    return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, (!message["role"] ? {} : { role: message["role"] })), (!message["content"] ? {} : { content: message["content"] })), (!message["name"] ? {} : { name: message["name"] })), (!message.function_call
+        ? {}
+        : {
+            functionCall: {
+                name: (_a = message.function_call) === null || _a === void 0 ? void 0 : _a["name"],
+                arguments: (_b = message.function_call) === null || _b === void 0 ? void 0 : _b["arguments"],
+            },
+        })), (!message.context
+        ? {}
+        : {
+            context: Object.assign({}, (!message.context.messages
+                ? {}
+                : {
+                    messages: message.context.messages.map((m) => {
+                        return _deserializeMessage(m);
+                    }),
+                })),
+        }));
+}
+function deserializeContentFilter(result) {
+    var _a, _b, _c, _d, _e, _f, _g, _h;
+    return Object.assign(Object.assign(Object.assign(Object.assign({}, (!result.sexual
+        ? {}
+        : {
+            sexual: {
+                severity: (_a = result.sexual) === null || _a === void 0 ? void 0 : _a["severity"],
+                filtered: (_b = result.sexual) === null || _b === void 0 ? void 0 : _b["filtered"],
+            },
+        })), (!result.violence
+        ? {}
+        : {
+            violence: {
+                severity: (_c = result.violence) === null || _c === void 0 ? void 0 : _c["severity"],
+                filtered: (_d = result.violence) === null || _d === void 0 ? void 0 : _d["filtered"],
+            },
+        })), (!result.hate
+        ? {}
+        : {
+            hate: {
+                severity: (_e = result.hate) === null || _e === void 0 ? void 0 : _e["severity"],
+                filtered: (_f = result.hate) === null || _f === void 0 ? void 0 : _f["filtered"],
+            },
+        })), (!result.self_harm
+        ? {}
+        : {
+            selfHarm: {
+                severity: (_g = result.self_harm) === null || _g === void 0 ? void 0 : _g["severity"],
+                filtered: (_h = result.self_harm) === null || _h === void 0 ? void 0 : _h["filtered"],
+            },
+        }));
+}
+
+// Copyright (c) Microsoft Corporation.
+function toSSE(chunkIter) {
+    return toMessage(toLine(chunkIter));
+}
+function concatBuffer(a, b) {
+    const res = new Uint8Array(a.length + b.length);
+    res.set(a);
+    res.set(b, a.length);
+    return res;
+}
+function createMessage() {
+    return {
+        data: undefined,
+        event: "",
+        id: "",
+        retry: undefined,
+    };
+}
+function toLine(chunkIter) {
+    return tslib.__asyncGenerator(this, arguments, function* toLine_1() {
+        var _a, e_1, _b, _c;
+        let buf;
+        let bufIdx = 0;
+        let fieldLen = -1;
+        let discardTrailingNewline = false;
+        try {
+            for (var _d = true, chunkIter_1 = tslib.__asyncValues(chunkIter), chunkIter_1_1; chunkIter_1_1 = yield tslib.__await(chunkIter_1.next()), _a = chunkIter_1_1.done, !_a;) {
+                _c = chunkIter_1_1.value;
+                _d = false;
+                try {
+                    const chunk = _c;
+                    if (buf === undefined) {
+                        buf = chunk;
+                        bufIdx = 0;
+                        fieldLen = -1;
+                    }
+                    else {
+                        buf = concatBuffer(buf, chunk);
+                    }
+                    const bufLen = buf.length;
+                    let start = 0;
+                    while (bufIdx < bufLen) {
+                        if (discardTrailingNewline) {
+                            if (buf[bufIdx] === 10 /* ControlChars.NewLine */) {
+                                start = ++bufIdx;
+                            }
+                            discardTrailingNewline = false;
+                        }
+                        let end = -1;
+                        for (; bufIdx < bufLen && end === -1; ++bufIdx) {
+                            switch (buf[bufIdx]) {
+                                case 58 /* ControlChars.Colon */:
+                                    if (fieldLen === -1) {
+                                        fieldLen = bufIdx - start;
+                                    }
+                                    break;
+                                case 13 /* ControlChars.CarriageReturn */:
+                                    // We need to discard the trailing newline if any but can't do
+                                    // that now because we need to dispatch the current line first.
+                                    discardTrailingNewline = true;
+                                    end = bufIdx;
+                                    break;
+                                case 10 /* ControlChars.NewLine */:
+                                    end = bufIdx;
+                                    break;
+                            }
+                        }
+                        if (end === -1) {
+                            // We reached the end of the buffer but the line hasn't ended.
+                            // Wait for the next chunk and then continue parsing:
+                            break;
+                        }
+                        yield yield tslib.__await({ line: buf.subarray(start, end), fieldLen });
+                        start = bufIdx; // we're now on the next line
+                        fieldLen = -1;
+                    }
+                    if (start === bufLen) {
+                        buf = undefined;
+                    }
+                    else if (start !== 0) {
+                        // discard already processed lines
+                        buf = buf.subarray(start);
+                        bufIdx -= start;
+                    }
+                }
+                finally {
+                    _d = true;
+                }
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (!_d && !_a && (_b = chunkIter_1.return)) yield tslib.__await(_b.call(chunkIter_1));
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
     });
+}
+function toMessage(lineIter) {
+    return tslib.__asyncGenerator(this, arguments, function* toMessage_1() {
+        var _a, e_2, _b, _c;
+        let message = createMessage();
+        const decoder = new TextDecoder();
+        try {
+            for (var _d = true, lineIter_1 = tslib.__asyncValues(lineIter), lineIter_1_1; lineIter_1_1 = yield tslib.__await(lineIter_1.next()), _a = lineIter_1_1.done, !_a;) {
+                _c = lineIter_1_1.value;
+                _d = false;
+                try {
+                    const { line, fieldLen } = _c;
+                    if (line.length === 0 && message.data !== undefined) {
+                        // empty line denotes end of message. Yield and start a new message:
+                        yield yield tslib.__await(message);
+                        message = createMessage();
+                    }
+                    else if (fieldLen > 0) {
+                        // exclude comments and lines with no values
+                        // line is of format "<field>:<value>" or "<field>: <value>"
+                        // https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation
+                        const field = decoder.decode(line.subarray(0, fieldLen));
+                        const valueOffset = fieldLen + (line[fieldLen + 1] === 32 /* ControlChars.Space */ ? 2 : 1);
+                        const value = decoder.decode(line.subarray(valueOffset));
+                        switch (field) {
+                            case "data":
+                                message.data = message.data ? message.data + "\n" + value : value;
+                                break;
+                            case "event":
+                                message.event = value;
+                                break;
+                            case "id":
+                                message.id = value;
+                                break;
+                            case "retry": {
+                                const retry = parseInt(value, 10);
+                                if (!isNaN(retry)) {
+                                    message.retry = retry;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                finally {
+                    _d = true;
+                }
+            }
+        }
+        catch (e_2_1) { e_2 = { error: e_2_1 }; }
+        finally {
+            try {
+                if (!_d && !_a && (_b = lineIter_1.return)) yield tslib.__await(_b.call(lineIter_1));
+            }
+            finally { if (e_2) throw e_2.error; }
+        }
+    });
+}
+
+// Copyright (c) Microsoft Corporation.
+async function getSSEs(response) {
+    const chunkIterator = await getStream(response);
+    return toSSE(chunkIterator);
+}
+async function getStream(response) {
+    const stream = (await response.asNodeStream()).body;
+    if (!stream)
+        throw new Error("No stream found in response. Did you enable the stream option?");
+    return stream;
+}
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+/**
+ * THIS IS AN AUTO-GENERATED FILE - DO NOT EDIT!
+ *
+ * Any changes you make here may be lost.
+ *
+ * If you need to make changes, please do so in the original source file, \{project-root\}/sources/custom
+ */
+function wrapError(f, message) {
+    try {
+        const result = f();
+        return result;
+    }
+    catch (cause) {
+        throw new Error(message, { cause });
+    }
+}
+
+// Copyright (c) Microsoft Corporation.
+function getOaiSSEs(response, toEvent) {
+    return tslib.__asyncGenerator(this, arguments, function* getOaiSSEs_1() {
+        var _a, e_1, _b, _c;
+        const stream = yield tslib.__await(getSSEs(response));
+        let isDone = false;
+        try {
+            for (var _d = true, stream_1 = tslib.__asyncValues(stream), stream_1_1; stream_1_1 = yield tslib.__await(stream_1.next()), _a = stream_1_1.done, !_a;) {
+                _c = stream_1_1.value;
+                _d = false;
+                try {
+                    const event = _c;
+                    if (isDone) {
+                        // handle a case where the service sends excess stream
+                        // data after the [DONE] event
+                        continue;
+                    }
+                    else if (event.data === "[DONE]") {
+                        isDone = true;
+                    }
+                    else {
+                        yield yield tslib.__await(toEvent(wrapError(() => JSON.parse(event.data), "Error parsing an event. See 'cause' for more details")));
+                    }
+                }
+                finally {
+                    _d = true;
+                }
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (!_d && !_a && (_b = stream_1.return)) yield tslib.__await(_b.call(stream_1));
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+    });
+}
+
+// Copyright (c) Microsoft Corporation.
+function _getEmbeddingsSend(context, input, deploymentId, options = { requestOptions: {} }) {
+    return context.path("/deployments/{deploymentId}/embeddings", deploymentId).post(Object.assign(Object.assign({}, coreClient.operationOptionsToRequestParameters(options)), { body: { user: options === null || options === void 0 ? void 0 : options.user, model: options === null || options === void 0 ? void 0 : options.model, input: input } }));
 }
 async function _getEmbeddingsDeserialize(result) {
     var _a;
     if (isUnexpected(result)) {
-        throw result.body;
+        throw result.body.error;
     }
     return {
         data: ((_a = result.body["data"]) !== null && _a !== void 0 ? _a : []).map((p) => ({
@@ -23779,12 +25354,7 @@ async function getEmbeddings(context, input, deploymentId, options = { requestOp
     return _getEmbeddingsDeserialize(result);
 }
 function _getCompletionsSend(context, prompt, deploymentId, options = { requestOptions: {} }) {
-    var _a, _b, _c;
-    return context.path("/deployments/{deploymentId}/completions", deploymentId).post({
-        allowInsecureConnection: (_a = options.requestOptions) === null || _a === void 0 ? void 0 : _a.allowInsecureConnection,
-        skipUrlEncoding: (_b = options.requestOptions) === null || _b === void 0 ? void 0 : _b.skipUrlEncoding,
-        headers: Object.assign({}, (_c = options.requestOptions) === null || _c === void 0 ? void 0 : _c.headers),
-        body: {
+    return context.path("/deployments/{deploymentId}/completions", deploymentId).post(Object.assign(Object.assign({}, coreClient.operationOptionsToRequestParameters(options)), { body: {
             prompt: prompt,
             max_tokens: options === null || options === void 0 ? void 0 : options.maxTokens,
             temperature: options === null || options === void 0 ? void 0 : options.temperature,
@@ -23800,30 +25370,94 @@ function _getCompletionsSend(context, prompt, deploymentId, options = { requestO
             best_of: options === null || options === void 0 ? void 0 : options.bestOf,
             stream: options === null || options === void 0 ? void 0 : options.stream,
             model: options === null || options === void 0 ? void 0 : options.model,
-        },
-    });
+        } }));
 }
 async function _getCompletionsDeserialize(result) {
-    var _a;
+    var _a, _b;
     if (isUnexpected(result)) {
-        throw result.body;
+        throw result.body.error;
     }
     return {
         id: result.body["id"],
-        created: result.body["created"],
-        choices: ((_a = result.body["choices"]) !== null && _a !== void 0 ? _a : []).map((p) => ({
-            text: p["text"],
-            index: p["index"],
-            logprobs: p.logprobs === null
-                ? null
-                : {
-                    tokens: p.logprobs["tokens"],
-                    tokenLogprobs: p.logprobs["token_logprobs"],
-                    topLogprobs: p.logprobs["top_logprobs"],
-                    textOffset: p.logprobs["text_offset"],
-                },
-            finishReason: p["finish_reason"],
-        })),
+        created: new Date(result.body["created"]),
+        promptFilterResults: ((_a = result.body["prompt_annotations"]) !== null && _a !== void 0 ? _a : []).map((p) => {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v;
+            return ({
+                promptIndex: p["prompt_index"],
+                contentFilterResults: !p.content_filter_results
+                    ? undefined
+                    : {
+                        sexual: !((_a = p.content_filter_results) === null || _a === void 0 ? void 0 : _a.sexual)
+                            ? undefined
+                            : {
+                                severity: (_c = (_b = p.content_filter_results) === null || _b === void 0 ? void 0 : _b.sexual) === null || _c === void 0 ? void 0 : _c["severity"],
+                                filtered: (_e = (_d = p.content_filter_results) === null || _d === void 0 ? void 0 : _d.sexual) === null || _e === void 0 ? void 0 : _e["filtered"],
+                            },
+                        violence: !((_f = p.content_filter_results) === null || _f === void 0 ? void 0 : _f.violence)
+                            ? undefined
+                            : {
+                                severity: (_h = (_g = p.content_filter_results) === null || _g === void 0 ? void 0 : _g.violence) === null || _h === void 0 ? void 0 : _h["severity"],
+                                filtered: (_k = (_j = p.content_filter_results) === null || _j === void 0 ? void 0 : _j.violence) === null || _k === void 0 ? void 0 : _k["filtered"],
+                            },
+                        hate: !((_l = p.content_filter_results) === null || _l === void 0 ? void 0 : _l.hate)
+                            ? undefined
+                            : {
+                                severity: (_o = (_m = p.content_filter_results) === null || _m === void 0 ? void 0 : _m.hate) === null || _o === void 0 ? void 0 : _o["severity"],
+                                filtered: (_q = (_p = p.content_filter_results) === null || _p === void 0 ? void 0 : _p.hate) === null || _q === void 0 ? void 0 : _q["filtered"],
+                            },
+                        selfHarm: !((_r = p.content_filter_results) === null || _r === void 0 ? void 0 : _r.self_harm)
+                            ? undefined
+                            : {
+                                severity: (_t = (_s = p.content_filter_results) === null || _s === void 0 ? void 0 : _s.self_harm) === null || _t === void 0 ? void 0 : _t["severity"],
+                                filtered: (_v = (_u = p.content_filter_results) === null || _u === void 0 ? void 0 : _u.self_harm) === null || _v === void 0 ? void 0 : _v["filtered"],
+                            },
+                    },
+            });
+        }),
+        choices: ((_b = result.body["choices"]) !== null && _b !== void 0 ? _b : []).map((p) => {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v;
+            return ({
+                text: p["text"],
+                index: p["index"],
+                contentFilterResults: !p.content_filter_results
+                    ? undefined
+                    : {
+                        sexual: !((_a = p.content_filter_results) === null || _a === void 0 ? void 0 : _a.sexual)
+                            ? undefined
+                            : {
+                                severity: (_c = (_b = p.content_filter_results) === null || _b === void 0 ? void 0 : _b.sexual) === null || _c === void 0 ? void 0 : _c["severity"],
+                                filtered: (_e = (_d = p.content_filter_results) === null || _d === void 0 ? void 0 : _d.sexual) === null || _e === void 0 ? void 0 : _e["filtered"],
+                            },
+                        violence: !((_f = p.content_filter_results) === null || _f === void 0 ? void 0 : _f.violence)
+                            ? undefined
+                            : {
+                                severity: (_h = (_g = p.content_filter_results) === null || _g === void 0 ? void 0 : _g.violence) === null || _h === void 0 ? void 0 : _h["severity"],
+                                filtered: (_k = (_j = p.content_filter_results) === null || _j === void 0 ? void 0 : _j.violence) === null || _k === void 0 ? void 0 : _k["filtered"],
+                            },
+                        hate: !((_l = p.content_filter_results) === null || _l === void 0 ? void 0 : _l.hate)
+                            ? undefined
+                            : {
+                                severity: (_o = (_m = p.content_filter_results) === null || _m === void 0 ? void 0 : _m.hate) === null || _o === void 0 ? void 0 : _o["severity"],
+                                filtered: (_q = (_p = p.content_filter_results) === null || _p === void 0 ? void 0 : _p.hate) === null || _q === void 0 ? void 0 : _q["filtered"],
+                            },
+                        selfHarm: !((_r = p.content_filter_results) === null || _r === void 0 ? void 0 : _r.self_harm)
+                            ? undefined
+                            : {
+                                severity: (_t = (_s = p.content_filter_results) === null || _s === void 0 ? void 0 : _s.self_harm) === null || _t === void 0 ? void 0 : _t["severity"],
+                                filtered: (_v = (_u = p.content_filter_results) === null || _u === void 0 ? void 0 : _u.self_harm) === null || _v === void 0 ? void 0 : _v["filtered"],
+                            },
+                    },
+                logprobs: p.logprobs === null
+                    ? null
+                    : {
+                        tokens: p.logprobs["tokens"],
+                        tokenLogprobs: p.logprobs["token_logprobs"],
+                        topLogprobs: p.logprobs["top_logprobs"],
+                        textOffset: p.logprobs["text_offset"],
+                    },
+                finishReason: p["finish_reason"],
+            });
+        }),
         usage: {
             completionTokens: result.body.usage["completion_tokens"],
             promptTokens: result.body.usage["prompt_tokens"],
@@ -23841,13 +25475,10 @@ async function getCompletions(context, prompt, deploymentId, options = { request
     return _getCompletionsDeserialize(result);
 }
 function _getChatCompletionsSend(context, messages, deploymentId, options = { requestOptions: {} }) {
-    var _a, _b, _c;
-    return context.path("/deployments/{deploymentId}/chat/completions", deploymentId).post({
-        allowInsecureConnection: (_a = options.requestOptions) === null || _a === void 0 ? void 0 : _a.allowInsecureConnection,
-        skipUrlEncoding: (_b = options.requestOptions) === null || _b === void 0 ? void 0 : _b.skipUrlEncoding,
-        headers: Object.assign({}, (_c = options.requestOptions) === null || _c === void 0 ? void 0 : _c.headers),
-        body: {
+    return context.path("/deployments/{deploymentId}/chat/completions", deploymentId).post(Object.assign(Object.assign({}, coreClient.operationOptionsToRequestParameters(options)), { body: {
             messages: messages,
+            functions: options === null || options === void 0 ? void 0 : options.functions,
+            function_call: options === null || options === void 0 ? void 0 : options.functionCall,
             max_tokens: options === null || options === void 0 ? void 0 : options.maxTokens,
             temperature: options === null || options === void 0 ? void 0 : options.temperature,
             top_p: options === null || options === void 0 ? void 0 : options.topP,
@@ -23859,34 +25490,65 @@ function _getChatCompletionsSend(context, messages, deploymentId, options = { re
             frequency_penalty: options === null || options === void 0 ? void 0 : options.frequencyPenalty,
             stream: options === null || options === void 0 ? void 0 : options.stream,
             model: options === null || options === void 0 ? void 0 : options.model,
-        },
-    });
+            dataSources: options === null || options === void 0 ? void 0 : options.dataSources,
+        } }));
 }
-async function _getChatCompletionsDeserialize(result) {
-    var _a;
-    if (isUnexpected(result)) {
-        throw result.body;
+function _getChatCompletionsWithAzureExtensionsSend(context, messages, deploymentId, options = { requestOptions: {} }) {
+    return context
+        .path("/deployments/{deploymentId}/extensions/chat/completions", deploymentId)
+        .post(Object.assign(Object.assign({}, coreClient.operationOptionsToRequestParameters(options)), { body: {
+            messages: messages,
+            functions: options === null || options === void 0 ? void 0 : options.functions,
+            function_call: options === null || options === void 0 ? void 0 : options.functionCall,
+            max_tokens: options === null || options === void 0 ? void 0 : options.maxTokens,
+            temperature: options === null || options === void 0 ? void 0 : options.temperature,
+            top_p: options === null || options === void 0 ? void 0 : options.topP,
+            logit_bias: options === null || options === void 0 ? void 0 : options.logitBias,
+            user: options === null || options === void 0 ? void 0 : options.user,
+            n: options === null || options === void 0 ? void 0 : options.n,
+            stop: options === null || options === void 0 ? void 0 : options.stop,
+            presence_penalty: options === null || options === void 0 ? void 0 : options.presencePenalty,
+            frequency_penalty: options === null || options === void 0 ? void 0 : options.frequencyPenalty,
+            stream: options === null || options === void 0 ? void 0 : options.stream,
+            model: options === null || options === void 0 ? void 0 : options.model,
+            dataSources: options === null || options === void 0 ? void 0 : options.dataSources,
+        } }));
+}
+function _beginAzureBatchImageGenerationSend(context, prompt, options = { requestOptions: {} }) {
+    return context.path("/images/generations:submit").post(Object.assign(Object.assign({}, coreClient.operationOptionsToRequestParameters(options)), { body: {
+            prompt: prompt,
+            n: options === null || options === void 0 ? void 0 : options.n,
+            size: options === null || options === void 0 ? void 0 : options.size,
+            response_format: options === null || options === void 0 ? void 0 : options.responseFormat,
+            user: options === null || options === void 0 ? void 0 : options.user,
+        } }));
+}
+function listCompletions(context, prompt, deploymentName, options = { requestOptions: {} }) {
+    const response = _getCompletionsSend(context, prompt, deploymentName, Object.assign(Object.assign({}, options), { stream: true }));
+    return getOaiSSEs(response, getCompletionsResult);
+}
+async function getImages(context, prompt, options = { requestOptions: {} }) {
+    const response = await _beginAzureBatchImageGenerationSend(context, prompt, options);
+    if (isUnexpected(response)) {
+        // Check for response from OpenAI
+        const body = response.body;
+        if (body.created && body.data) {
+            return body;
+        }
+        throw response.body.error;
     }
-    return {
-        id: result.body["id"],
-        created: result.body["created"],
-        choices: ((_a = result.body["choices"]) !== null && _a !== void 0 ? _a : []).map((p) => {
-            var _a, _b, _c, _d;
-            return ({
-                message: !p.message
-                    ? undefined
-                    : { role: (_a = p.message) === null || _a === void 0 ? void 0 : _a["role"], content: (_b = p.message) === null || _b === void 0 ? void 0 : _b["content"] },
-                index: p["index"],
-                finishReason: p["finish_reason"],
-                delta: !p.delta ? undefined : { role: (_c = p.delta) === null || _c === void 0 ? void 0 : _c["role"], content: (_d = p.delta) === null || _d === void 0 ? void 0 : _d["content"] },
-            });
-        }),
-        usage: {
-            completionTokens: result.body.usage["completion_tokens"],
-            promptTokens: result.body.usage["prompt_tokens"],
-            totalTokens: result.body.usage["total_tokens"],
-        },
-    };
+    if (response.status === "202") {
+        const poller = await getLongRunningPoller(context, response);
+        const result = await poller.pollUntilDone();
+        return getImageResultsDeserialize(result);
+    }
+    else {
+        return getImageResultsDeserialize(response);
+    }
+}
+function listChatCompletions(context, messages, deploymentName, options = { requestOptions: {} }) {
+    const response = _getChatCompletionsSendX(context, messages, deploymentName, Object.assign(Object.assign({}, options), { stream: true }));
+    return getOaiSSEs(response, getChatCompletionsResult);
 }
 /**
  * Gets chat completions for the provided chat messages.
@@ -23894,224 +25556,42 @@ async function _getChatCompletionsDeserialize(result) {
  * provided prompt data.
  */
 async function getChatCompletions(context, messages, deploymentId, options = { requestOptions: {} }) {
-    const result = await _getChatCompletionsSend(context, messages, deploymentId, options);
-    return _getChatCompletionsDeserialize(result);
-}
-function _getAzureBatchImageGenerationOperationStatusSend(context, operationId, options = {
-    requestOptions: {},
-}) {
-    var _a, _b, _c;
-    return context.path("/operations/images/{operationId}", operationId).get({
-        allowInsecureConnection: (_a = options.requestOptions) === null || _a === void 0 ? void 0 : _a.allowInsecureConnection,
-        skipUrlEncoding: (_b = options.requestOptions) === null || _b === void 0 ? void 0 : _b.skipUrlEncoding,
-        headers: Object.assign({}, (_c = options.requestOptions) === null || _c === void 0 ? void 0 : _c.headers),
-    });
-}
-async function _getAzureBatchImageGenerationOperationStatusDeserialize(result) {
-    var _a, _b;
+    const result = await _getChatCompletionsSendX(context, messages, deploymentId, options);
     if (isUnexpected(result)) {
-        throw result.body;
+        throw result.body.error;
     }
-    return {
-        id: result.body["id"],
-        created: result.body["created"],
-        expires: result.body["expires"],
-        result: !result.body.result
-            ? undefined
-            : {
-                created: (_a = result.body.result) === null || _a === void 0 ? void 0 : _a["created"],
-                data: toImageGenerationsData((_b = result.body.result) === null || _b === void 0 ? void 0 : _b["data"]),
-            },
-        status: result.body["status"],
-        error: !result.body.error ? undefined : result.body.error,
-    };
+    return getChatCompletionsResult(result.body);
 }
-/**
- * Convert REST-level ImageGenerationsOutput.data to HLC-level ImageGenerations.data
- * see https://github.com/Azure/autorest.typescript/issues/1921
- * @internal
- */
-function toImageGenerationsData(input) {
-    return input.map(function (locationOrPayload) {
-        if ("url" in locationOrPayload) {
-            return locationOrPayload;
-        }
-        else {
-            return {
-                base64Data: locationOrPayload.b64_json,
-            };
-        }
-    });
+function convertResultTypes({ created, data }) {
+    if (typeof data[0].url === "string") {
+        return {
+            created: new Date(created),
+            data: data,
+        };
+    }
+    else {
+        return {
+            created: new Date(created),
+            data: data.map((item) => {
+                return {
+                    base64Data: item.b64_json,
+                };
+            }),
+        };
+    }
 }
-/** Returns the status of the images operation */
-async function getAzureBatchImageGenerationOperationStatus(context, operationId, options = {
-    requestOptions: {},
-}) {
-    const result = await _getAzureBatchImageGenerationOperationStatusSend(context, operationId, options);
-    return _getAzureBatchImageGenerationOperationStatusDeserialize(result);
+function getImageResultsDeserialize(response) {
+    if (isUnexpected(response) || !response.body.result) {
+        throw response.body.error;
+    }
+    const result = response.body.result;
+    return convertResultTypes(result);
 }
-function _beginAzureBatchImageGenerationSend(context, prompt, options = { requestOptions: {} }) {
-    var _a, _b, _c, _d;
-    return context.path("/images/generations:submit").post({
-        allowInsecureConnection: (_a = options.requestOptions) === null || _a === void 0 ? void 0 : _a.allowInsecureConnection,
-        skipUrlEncoding: (_b = options.requestOptions) === null || _b === void 0 ? void 0 : _b.skipUrlEncoding,
-        headers: Object.assign({}, (_c = options.requestOptions) === null || _c === void 0 ? void 0 : _c.headers),
-        body: {
-            prompt: prompt,
-            n: (_d = options.n) !== null && _d !== void 0 ? _d : 1,
-            size: options === null || options === void 0 ? void 0 : options.size,
-            response_format: options === null || options === void 0 ? void 0 : options.responseFormat,
-            user: options === null || options === void 0 ? void 0 : options.user,
-        },
-    });
-}
-async function _beginAzureBatchImageGenerationDeserialize(result) {
+function _getChatCompletionsSendX(context, messages, deploymentName, options = { requestOptions: {} }) {
     var _a, _b;
-    if (isUnexpected(result)) {
-        throw result.body;
-    }
-    return {
-        id: result.body["id"],
-        created: result.body["created"],
-        expires: result.body["expires"],
-        result: !result.body.result
-            ? undefined
-            : {
-                created: (_a = result.body.result) === null || _a === void 0 ? void 0 : _a["created"],
-                data: toImageGenerationsData((_b = result.body.result) === null || _b === void 0 ? void 0 : _b["data"]),
-            },
-        status: result.body["status"],
-        error: !result.body.error ? undefined : result.body.error,
-    };
-}
-/** Starts the generation of a batch of images from a text caption */
-async function beginAzureBatchImageGeneration(context, prompt, options = { requestOptions: {} }) {
-    const result = await _beginAzureBatchImageGenerationSend(context, prompt, options);
-    return _beginAzureBatchImageGenerationDeserialize(result);
-}
-function getCompletionsResult(body) {
-    var _a;
-    return {
-        id: body["id"],
-        created: body["created"],
-        choices: ((_a = body["choices"]) !== null && _a !== void 0 ? _a : []).map((p) => ({
-            text: p["text"],
-            index: p["index"],
-            logprobs: p.logprobs === null
-                ? null
-                : {
-                    tokens: p.logprobs["tokens"],
-                    tokenLogprobs: p.logprobs["token_logprobs"],
-                    topLogprobs: p.logprobs["top_logprobs"],
-                    textOffset: p.logprobs["text_offset"],
-                },
-            finishReason: p["finish_reason"],
-        })),
-    };
-}
-function getChatCompletionsResult(body) {
-    var _a;
-    return {
-        id: body["id"],
-        created: body["created"],
-        choices: ((_a = body["choices"]) !== null && _a !== void 0 ? _a : []).map((p) => {
-            var _a, _b, _c, _d;
-            return ({
-                message: !p.message
-                    ? undefined
-                    : { role: (_a = p.message) === null || _a === void 0 ? void 0 : _a["role"], content: (_b = p.message) === null || _b === void 0 ? void 0 : _b["content"] },
-                index: p["index"],
-                finishReason: p["finish_reason"],
-                delta: !p.delta ? undefined : { role: (_c = p.delta) === null || _c === void 0 ? void 0 : _c["role"], content: (_d = p.delta) === null || _d === void 0 ? void 0 : _d["content"] },
-            });
-        }),
-    };
-}
-
-// Copyright (c) Microsoft Corporation.
-function getStream(response) {
-    return tslib.__asyncGenerator(this, arguments, function* getStream_1() {
-        var _a, e_1, _b, _c;
-        const stream = (yield tslib.__await(response.asNodeStream())).body;
-        if (!stream)
-            throw new Error("No stream found in response. Did you enable the stream option?");
-        try {
-            for (var _d = true, stream_1 = tslib.__asyncValues(stream), stream_1_1; stream_1_1 = yield tslib.__await(stream_1.next()), _a = stream_1_1.done, !_a;) {
-                _c = stream_1_1.value;
-                _d = false;
-                try {
-                    const chunk = _c;
-                    yield yield tslib.__await(chunk.toString());
-                }
-                finally {
-                    _d = true;
-                }
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (!_d && !_a && (_b = stream_1.return)) yield tslib.__await(_b.call(stream_1));
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
-    });
-}
-
-// Copyright (c) Microsoft Corporation.
-async function getSSEs(response, toEvent) {
-    const stream = getStream(response);
-    let prevLineIfIncomplete = "";
-    let started = false;
-    return streamToEvents(stream, (chunk) => {
-        if (!chunk.startsWith("data: ") && !started) {
-            throw new Error(chunk);
-        }
-        started = true;
-        const events = [];
-        for (let str of chunk.split("\n\n")) {
-            if (str.startsWith("data: ")) {
-                str = str.slice(6);
-            }
-            if (["", "[DONE]", "[DONE]\n"].includes(str)) {
-                return events;
-            }
-            try {
-                const event = JSON.parse(prevLineIfIncomplete + str);
-                prevLineIfIncomplete = "";
-                events.push(toEvent(event));
-            }
-            catch (e) {
-                prevLineIfIncomplete += str;
-            }
-        }
-        return events;
-    });
-}
-function streamToEvents(stream, processChunk) {
-    return tslib.__asyncGenerator(this, arguments, function* streamToEvents_1() {
-        var _a, e_1, _b, _c;
-        try {
-            for (var _d = true, stream_1 = tslib.__asyncValues(stream), stream_1_1; stream_1_1 = yield tslib.__await(stream_1.next()), _a = stream_1_1.done, !_a;) {
-                _c = stream_1_1.value;
-                _d = false;
-                try {
-                    const chunk = _c;
-                    yield tslib.__await(yield* tslib.__asyncDelegator(tslib.__asyncValues(processChunk(chunk))));
-                }
-                finally {
-                    _d = true;
-                }
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (!_d && !_a && (_b = stream_1.return)) yield tslib.__await(_b.call(stream_1));
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
-    });
+    return ((_a = options.azureExtensionOptions) === null || _a === void 0 ? void 0 : _a.extensions)
+        ? _getChatCompletionsWithAzureExtensionsSend(context, messages, deploymentName, Object.assign(Object.assign({}, options), { dataSources: (_b = options.azureExtensionOptions) === null || _b === void 0 ? void 0 : _b.extensions }))
+        : _getChatCompletionsSend(context, messages, deploymentName, options);
 }
 
 // Copyright (c) Microsoft Corporation.
@@ -24144,30 +25624,65 @@ class OpenAIClient {
                     ...((_b = opts.additionalPolicies) !== null && _b !== void 0 ? _b : []),
                     {
                         position: "perCall",
-                        policy: {
-                            name: "openAiEndpoint",
-                            sendRequest: (request, next) => {
-                                const obj = new URL(request.url);
-                                const parts = obj.pathname.split("/");
-                                obj.pathname = `/${parts[1]}/${parts.slice(5).join("/")}`;
-                                obj.searchParams.delete("api-version");
-                                request.url = obj.toString();
-                                return next(request);
-                            },
-                        },
+                        policy: getPolicy(),
                     },
                 ],
             })));
     }
-    /** Returns the status of the images operation */
-    getAzureBatchImageGenerationOperationStatus(operationId, options = {
-        requestOptions: {},
-    }) {
-        return getAzureBatchImageGenerationOperationStatus(this._client, operationId, options);
+    /**
+     * Returns textual completions as configured for a given prompt.
+     * @param deploymentName - Specifies either the model deployment name (when using Azure OpenAI) or model name (when using non-Azure OpenAI) to use for this request.
+     * @param prompt - The prompt to use for this request.
+     * @param options - The options for this completions request.
+     * @returns The completions for the given prompt.
+     */
+    getCompletions(deploymentName, prompt, options = { requestOptions: {} }) {
+        this.setModel(deploymentName, options);
+        return getCompletions(this._client, prompt, deploymentName, options);
     }
-    /** Starts the generation of a batch of images from a text caption */
-    beginAzureBatchImageGeneration(prompt, options = { requestOptions: {} }) {
-        return beginAzureBatchImageGeneration(this._client, prompt, options);
+    /**
+     * Lists the completions tokens as they become available for a given prompt.
+     * @param deploymentName - The name of the model deployment (when using Azure OpenAI) or model name (when using non-Azure OpenAI) to use for this request.
+     * @param prompt - The prompt to use for this request.
+     * @param options - The completions options for this completions request.
+     * @returns An asynchronous iterable of completions tokens.
+     */
+    listCompletions(deploymentName, prompt, options = {}) {
+        this.setModel(deploymentName, options);
+        return listCompletions(this._client, prompt, deploymentName, options);
+    }
+    /**
+     * Return the computed embeddings for a given prompt.
+     * @param deploymentName - The name of the model deployment (when using Azure OpenAI) or model name (when using non-Azure OpenAI) to use for this request.
+     * @param input - The prompt to use for this request.
+     * @param options - The embeddings options for this embeddings request.
+     * @returns The embeddings for the given prompt.
+     */
+    getEmbeddings(deploymentName, input, options = { requestOptions: {} }) {
+        this.setModel(deploymentName, options);
+        return getEmbeddings(this._client, input, deploymentName, options);
+    }
+    /**
+     * Get chat completions for provided chat context messages.
+     * @param deploymentName - The name of the model deployment (when using Azure OpenAI) or model name (when using non-Azure OpenAI) to use for this request.
+     * @param messages - The chat context messages to use for this request.
+     * @param options - The chat completions options for this completions request.
+     * @returns The chat completions for the given chat context messages.
+     */
+    getChatCompletions(deploymentName, messages, options = { requestOptions: {} }) {
+        this.setModel(deploymentName, options);
+        return getChatCompletions(this._client, messages, deploymentName, options);
+    }
+    /**
+     * Lists the chat completions tokens as they become available for a chat context.
+     * @param deploymentName - The name of the model deployment (when using Azure OpenAI) or model name (when using non-Azure OpenAI) to use for this request.
+     * @param messages - The chat context messages to use for this request.
+     * @param options - The chat completions options for this chat completions request.
+     * @returns An asynchronous iterable of chat completions tokens.
+     */
+    listChatCompletions(deploymentName, messages, options = { requestOptions: {} }) {
+        this.setModel(deploymentName, options);
+        return listChatCompletions(this._client, messages, deploymentName, options);
     }
     /**
      * Starts the generation of a batch of images from a text caption
@@ -24176,64 +25691,7 @@ class OpenAIClient {
      * @returns The image generation response (containing url or base64 data).
      */
     getImages(prompt, options = { requestOptions: {} }) {
-        return beginAzureBatchImageGeneration(this._client, prompt, options);
-    }
-    /**
-     * Returns textual completions as configured for a given prompt.
-     * @param deploymentOrModelName - Specifies either the model deployment name (when using Azure OpenAI) or model name (when using non-Azure OpenAI) to use for this request.
-     * @param prompt - The prompt to use for this request.
-     * @param options - The options for this completions request.
-     * @returns The completions for the given prompt.
-     */
-    getCompletions(deploymentOrModelName, prompt, options = { requestOptions: {} }) {
-        this.setModel(deploymentOrModelName, options);
-        return getCompletions(this._client, prompt, deploymentOrModelName, options);
-    }
-    /**
-     * Lists the completions tokens as they become available for a given prompt.
-     * @param deploymentOrModelName - The name of the model deployment (when using Azure OpenAI) or model name (when using non-Azure OpenAI) to use for this request.
-     * @param prompt - The prompt to use for this request.
-     * @param options - The completions options for this completions request.
-     * @returns An asynchronous iterable of completions tokens.
-     */
-    listCompletions(deploymentOrModelName, prompt, options = {}) {
-        this.setModel(deploymentOrModelName, options);
-        const response = _getCompletionsSend(this._client, prompt, deploymentOrModelName, Object.assign(Object.assign({}, options), { stream: true }));
-        return getSSEs(response, getCompletionsResult);
-    }
-    /**
-     * Return the computed embeddings for a given prompt.
-     * @param deploymentOrModelName - The name of the model deployment (when using Azure OpenAI) or model name (when using non-Azure OpenAI) to use for this request.
-     * @param input - The prompt to use for this request.
-     * @param options - The embeddings options for this embeddings request.
-     * @returns The embeddings for the given prompt.
-     */
-    getEmbeddings(deploymentOrModelName, input, options = { requestOptions: {} }) {
-        this.setModel(deploymentOrModelName, options);
-        return getEmbeddings(this._client, input, deploymentOrModelName, options);
-    }
-    /**
-     * Get chat completions for provided chat context messages.
-     * @param deploymentOrModelName - The name of the model deployment (when using Azure OpenAI) or model name (when using non-Azure OpenAI) to use for this request.
-     * @param messages - The chat context messages to use for this request.
-     * @param options - The chat completions options for this completions request.
-     * @returns The chat completions for the given chat context messages.
-     */
-    getChatCompletions(deploymentOrModelName, messages, options = { requestOptions: {} }) {
-        this.setModel(deploymentOrModelName, options);
-        return getChatCompletions(this._client, messages, deploymentOrModelName, options);
-    }
-    /**
-     * Lists the chat completions tokens as they become available for a chat context.
-     * @param deploymentOrModelName - The name of the model deployment (when using Azure OpenAI) or model name (when using non-Azure OpenAI) to use for this request.
-     * @param messages - The chat context messages to use for this request.
-     * @param options - The chat completions options for this chat completions request.
-     * @returns An asynchronous iterable of chat completions tokens.
-     */
-    listChatCompletions(deploymentOrModelName, messages, options = { requestOptions: {} }) {
-        this.setModel(deploymentOrModelName, options);
-        const response = _getChatCompletionsSend(this._client, messages, deploymentOrModelName, Object.assign(Object.assign({}, options), { stream: true }));
-        return getSSEs(response, getChatCompletionsResult);
+        return getImages(this._client, prompt, options);
     }
     setModel(model, options) {
         if (!this._isAzure) {
@@ -24247,47 +25705,33 @@ function createOpenAIEndpoint(version) {
 function isCred(cred) {
     return coreAuth.isTokenCredential(cred) || cred.key !== undefined;
 }
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-/**
- * The OpenAIKeyCredential class represents an OpenAI API key
- * and is used to authenticate into an OpenAI client for
- * an OpenAI endpoint.
- */
-class OpenAIKeyCredential {
-    /**
-     * Create an instance of an AzureKeyCredential for use
-     * with a service client.
-     *
-     * @param key - The initial value of the key to use in authentication
-     */
-    constructor(key) {
-        if (!key) {
-            throw new Error("key must be a non-empty string");
-        }
-        this._key = createKey(key);
-    }
-    /**
-     * The value of the key to be used in authentication
-     */
-    get key() {
-        return this._key;
-    }
-    /**
-     * Change the value of the key.
-     *
-     * Updates will take effect upon the next request after
-     * updating the key value.
-     *
-     * @param newKey - The new key value to be used
-     */
-    update(newKey) {
-        this._key = createKey(newKey);
-    }
-}
-function createKey(key) {
-    return key.startsWith("Bearer ") ? key : `Bearer ${key}`;
+function getPolicy() {
+    const policy = {
+        name: "openAiEndpoint",
+        sendRequest: (request, next) => {
+            const obj = new URL(request.url);
+            const parts = obj.pathname.split("/");
+            switch (parts[parts.length - 1]) {
+                case "completions":
+                    if (parts[parts.length - 2] === "chat") {
+                        obj.pathname = `/${parts[1]}/chat/completions`;
+                    }
+                    else {
+                        obj.pathname = `/${parts[1]}/completions`;
+                    }
+                    break;
+                case "embeddings":
+                    obj.pathname = `/${parts[1]}/embeddings`;
+                    break;
+                case "generations:submit":
+                    obj.pathname = `/${parts[1]}/images/generations`;
+            }
+            obj.searchParams.delete("api-version");
+            request.url = obj.toString();
+            return next(request);
+        },
+    };
+    return policy;
 }
 
 Object.defineProperty(exports, "AzureKeyCredential", ({
