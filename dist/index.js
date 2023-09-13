@@ -24543,15 +24543,15 @@ async function Run() {
         }
         core.info(`Optimization: ${IsOptimization}`);
         const client = CreateOpenAIClient(core.getInput('resource-name'));
-        let system = `
-# input
+        let system = `# input
 - Result of running git diff command
 # What to do
 We would like to request the following
-- A brief description of the updates based on the differences between the before and after revisions`;
+- A brief description of the updates based on the differences between the before and after revisions
+`;
         if (displaySuggestions) {
-            system += `
-  - Suggestions for improvements to make it better with the revisions`;
+            system += `- Suggestions for improvements to make it better with the revisions
+`;
         }
         system += `
 # Restrictions
@@ -24568,16 +24568,18 @@ The following points must be observed in the explanation.
 - <Summary by file(2)>
 ## <file name(2)>
 - <Summary by file(1)>
-- <Summary by file(2)>`;
+- <Summary by file(2)>
+`;
         if (displaySuggestions) {
             system += `
-  # Suggestions for improvement
-  ## <file name(1)>
-  - <Suggestions for Improvement (1)>
-  - <Suggestions for Improvement (2)>
-  ## <file name(2)>
-  - <Suggestions for Improvement(1)>
-  - <Suggestions for Improvement(2)>`;
+# Suggestions for improvement
+## <file name(1)>
+- <Suggestions for Improvement (1)>
+- <Suggestions for Improvement (2)>
+## <file name(2)>
+- <Suggestions for Improvement(1)>
+- <Suggestions for Improvement(2)>
+`;
         }
         core.startGroup('Git Update Status');
         await Exec('git', ['fetch', 'origin', github.context.payload.pull_request?.base.sha]);
@@ -24585,13 +24587,27 @@ The following points must be observed in the explanation.
         await Exec('git', ['checkout', github.context.payload.pull_request?.head.ref]);
         core.endGroup();
         const diff = await GetAllFileDiff(core.getInput('target').split(','));
+        core.startGroup('Show prompt');
+        core.info(`system: \n${system}\n`);
+        core.info(`user: \n${diff}`);
+        core.endGroup();
         core.startGroup('OpenAI API Request');
         const messages = [
             { role: 'system', content: system },
             { role: 'user', content: diff }
         ];
+        let options = {};
+        if (core.getInput('max-tokens')) {
+            options.maxTokens = parseInt(core.getInput('max-tokens'));
+        }
+        if (core.getInput('temperature')) {
+            options.temperature = parseFloat(core.getInput('temperature'));
+        }
+        if (core.getInput('top-p')) {
+            options.topP = parseFloat(core.getInput('top-p'));
+        }
         core.info('GetChatCompletions');
-        const result = await client.getChatCompletions(core.getInput('deployment-id') || core.getInput('model'), messages);
+        const result = await client.getChatCompletions(core.getInput('deployment-id') || core.getInput('model'), messages, options);
         core.info('Response');
         const answer = result.choices[0].message?.content;
         if (!answer) {

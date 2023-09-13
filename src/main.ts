@@ -5,7 +5,7 @@ import * as exec from '@actions/exec'
 import * as github from '@actions/github'
 import * as tmp from 'tmp'
 import * as fs from 'fs/promises'
-import { OpenAIClient, AzureKeyCredential, OpenAIKeyCredential } from "@azure/openai";
+import { OpenAIClient, AzureKeyCredential, OpenAIKeyCredential, ChatMessage, GetChatCompletionsOptions } from "@azure/openai";
 
 const IsOptimization = github.context.payload.action === 'synchronize' && core.getBooleanInput('optimize')
 const IsAzureOpenAI = !!core.getInput('resource-name')
@@ -134,19 +134,19 @@ async function Run(): Promise<void>
 
     const client = CreateOpenAIClient(core.getInput('resource-name'))
 
-    let system = `
-# input
+    let system = `# input
 - Result of running git diff command
 # What to do
 We would like to request the following
-- A brief description of the updates based on the differences between the before and after revisions`
+- A brief description of the updates based on the differences between the before and after revisions
+`
 
-if (displaySuggestions) {
-  system += `
-  - Suggestions for improvements to make it better with the revisions`;
-}
+    if (displaySuggestions) {
+      system += `- Suggestions for improvements to make it better with the revisions
+`
+    }
 
-system += `
+    system += `
 # Restrictions
 The following points must be observed in the explanation.
 - All languages must be output in ${ core.getInput('language') } when answering.
@@ -161,18 +161,20 @@ The following points must be observed in the explanation.
 - <Summary by file(2)>
 ## <file name(2)>
 - <Summary by file(1)>
-- <Summary by file(2)>`;
+- <Summary by file(2)>
+`
 
-if (displaySuggestions) {
-  system += `
-  # Suggestions for improvement
-  ## <file name(1)>
-  - <Suggestions for Improvement (1)>
-  - <Suggestions for Improvement (2)>
-  ## <file name(2)>
-  - <Suggestions for Improvement(1)>
-  - <Suggestions for Improvement(2)>`;
-}
+    if (displaySuggestions) {
+      system += `
+# Suggestions for improvement
+## <file name(1)>
+- <Suggestions for Improvement (1)>
+- <Suggestions for Improvement (2)>
+## <file name(2)>
+- <Suggestions for Improvement(1)>
+- <Suggestions for Improvement(2)>
+`
+    }
 
     core.startGroup('Git Update Status')
     await Exec('git', ['fetch', 'origin', github.context.payload.pull_request?.base.sha])
@@ -182,15 +184,34 @@ if (displaySuggestions) {
 
     const diff = await GetAllFileDiff(core.getInput('target').split(','))
 
+    core.startGroup('Show prompt')
+    core.info(`system: \n${system}\n`)
+    core.info(`user: \n${diff}`)
+    core.endGroup()
+
     core.startGroup('OpenAI API Request')
-    const messages = [
+    const messages: ChatMessage[] = [
       { role: 'system', content: system },
       { role: 'user', content: diff }
     ]
 
+    let options: GetChatCompletionsOptions = {}
+    
+    if (core.getInput('max-tokens')) {
+      options.maxTokens = parseInt(core.getInput('max-tokens'))
+    }
+
+    if (core.getInput('temperature')) {
+      options.temperature = parseFloat(core.getInput('temperature'))
+    }
+
+    if (core.getInput('top-p')) {
+      options.topP = parseFloat(core.getInput('top-p'))
+    }
+
     core.info('GetChatCompletions')
     const result = await client.getChatCompletions(
-      core.getInput('deployment-id') || core.getInput('model'), messages)
+      core.getInput('deployment-id') || core.getInput('model'), messages, options)
 
     core.info('Response')
     const answer = result.choices[0].message?.content;
