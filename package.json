@@ -46,7 +46,7 @@
   },
   "private": true,
   "dependencies": {
-    "@types/tmp": "^0.2.3",
+    "@types/tmp": "^0.2.4",
     "tmp": "^0.2.1"
   }
 }
