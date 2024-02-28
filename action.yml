@@ -80,7 +80,7 @@ outputs:
     description: >
       Outputs the results of the auto-review.
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
 branding:
   icon: "box"
