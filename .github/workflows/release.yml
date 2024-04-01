@@ -1,4 +1,4 @@
-﻿# Copyright (c) 2022 Akio Jinsenji
+# Copyright (c) 2022 Akio Jinsenji
 
 name: Release
 
@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: 🌱 Checkout to the branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ⬆️ GitHub Release
         run: |
