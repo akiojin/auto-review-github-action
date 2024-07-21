@@ -26,14 +26,14 @@ jobs:
 
     steps:
       - name: 🌱 Checkout to the branch
-        uses: actions/checkout@v3
-
-      - name: 🍏 Set up Node.js version
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
+        uses: actions/checkout@v4
 
       - run: echo "Checked out branch is $(git rev-parse --abbrev-ref HEAD)"
+
+      - name: 🍏 Set up Node.js version
+        uses: actions/setup-node@v4
+        with:
+          node-version: 16
 
       - name: ⚙️ npm install and build
         run: npm run build
