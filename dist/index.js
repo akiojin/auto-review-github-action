@@ -558,7 +558,7 @@ class OidcClient {
                 .catch(error => {
                 throw new Error(`Failed to get ID Token. \n 
         Error Code : ${error.statusCode}\n 
-        Error Message: ${error.result.message}`);
+        Error Message: ${error.message}`);
             });
             const id_token = (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
             if (!id_token) {
@@ -11575,76 +11575,6 @@ function descending(a, b)
 
 /***/ }),
 
-/***/ 9417:
-/***/ ((module) => {
-
-"use strict";
-
-module.exports = balanced;
-function balanced(a, b, str) {
-  if (a instanceof RegExp) a = maybeMatch(a, str);
-  if (b instanceof RegExp) b = maybeMatch(b, str);
-
-  var r = range(a, b, str);
-
-  return r && {
-    start: r[0],
-    end: r[1],
-    pre: str.slice(0, r[0]),
-    body: str.slice(r[0] + a.length, r[1]),
-    post: str.slice(r[1] + b.length)
-  };
-}
-
-function maybeMatch(reg, str) {
-  var m = str.match(reg);
-  return m ? m[0] : null;
-}
-
-balanced.range = range;
-function range(a, b, str) {
-  var begs, beg, left, right, result;
-  var ai = str.indexOf(a);
-  var bi = str.indexOf(b, ai + 1);
-  var i = ai;
-
-  if (ai >= 0 && bi > 0) {
-    if(a===b) {
-      return [ai, bi];
-    }
-    begs = [];
-    left = str.length;
-
-    while (i >= 0 && !result) {
-      if (i == ai) {
-        begs.push(i);
-        ai = str.indexOf(a, i + 1);
-      } else if (begs.length == 1) {
-        result = [ begs.pop(), bi ];
-      } else {
-        beg = begs.pop();
-        if (beg < left) {
-          left = beg;
-          right = bi;
-        }
-
-        bi = str.indexOf(b, i + 1);
-      }
-
-      i = ai < bi && ai >= 0 ? ai : bi;
-    }
-
-    if (begs.length) {
-      result = [ left, right ];
-    }
-  }
-
-  return result;
-}
-
-
-/***/ }),
-
 /***/ 3682:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -12036,26 +11966,6 @@ CombinedStream.prototype._updateDataSize = function() {
 CombinedStream.prototype._emitError = function(err) {
   this._reset();
   this.emit('error', err);
-};
-
-
-/***/ }),
-
-/***/ 6891:
-/***/ ((module) => {
-
-module.exports = function (xs, fn) {
-    var res = [];
-    for (var i = 0; i < xs.length; i++) {
-        var x = fn(xs[i], i);
-        if (isArray(x)) res.push.apply(res, x);
-        else res.push(x);
-    }
-    return res;
-};
-
-var isArray = Array.isArray || function (xs) {
-    return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
 
@@ -13572,400 +13482,17 @@ module.exports = function(dst, src) {
 
 /***/ }),
 
-/***/ 6863:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-module.exports = realpath
-realpath.realpath = realpath
-realpath.sync = realpathSync
-realpath.realpathSync = realpathSync
-realpath.monkeypatch = monkeypatch
-realpath.unmonkeypatch = unmonkeypatch
-
-var fs = __nccwpck_require__(7147)
-var origRealpath = fs.realpath
-var origRealpathSync = fs.realpathSync
-
-var version = process.version
-var ok = /^v[0-5]\./.test(version)
-var old = __nccwpck_require__(1734)
-
-function newError (er) {
-  return er && er.syscall === 'realpath' && (
-    er.code === 'ELOOP' ||
-    er.code === 'ENOMEM' ||
-    er.code === 'ENAMETOOLONG'
-  )
-}
-
-function realpath (p, cache, cb) {
-  if (ok) {
-    return origRealpath(p, cache, cb)
-  }
-
-  if (typeof cache === 'function') {
-    cb = cache
-    cache = null
-  }
-  origRealpath(p, cache, function (er, result) {
-    if (newError(er)) {
-      old.realpath(p, cache, cb)
-    } else {
-      cb(er, result)
-    }
-  })
-}
-
-function realpathSync (p, cache) {
-  if (ok) {
-    return origRealpathSync(p, cache)
-  }
-
-  try {
-    return origRealpathSync(p, cache)
-  } catch (er) {
-    if (newError(er)) {
-      return old.realpathSync(p, cache)
-    } else {
-      throw er
-    }
-  }
-}
-
-function monkeypatch () {
-  fs.realpath = realpath
-  fs.realpathSync = realpathSync
-}
-
-function unmonkeypatch () {
-  fs.realpath = origRealpath
-  fs.realpathSync = origRealpathSync
-}
-
-
-/***/ }),
-
-/***/ 1734:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-var pathModule = __nccwpck_require__(1017);
-var isWindows = process.platform === 'win32';
-var fs = __nccwpck_require__(7147);
-
-// JavaScript implementation of realpath, ported from node pre-v6
-
-var DEBUG = process.env.NODE_DEBUG && /fs/.test(process.env.NODE_DEBUG);
-
-function rethrow() {
-  // Only enable in debug mode. A backtrace uses ~1000 bytes of heap space and
-  // is fairly slow to generate.
-  var callback;
-  if (DEBUG) {
-    var backtrace = new Error;
-    callback = debugCallback;
-  } else
-    callback = missingCallback;
-
-  return callback;
-
-  function debugCallback(err) {
-    if (err) {
-      backtrace.message = err.message;
-      err = backtrace;
-      missingCallback(err);
-    }
-  }
-
-  function missingCallback(err) {
-    if (err) {
-      if (process.throwDeprecation)
-        throw err;  // Forgot a callback but don't know where? Use NODE_DEBUG=fs
-      else if (!process.noDeprecation) {
-        var msg = 'fs: missing callback ' + (err.stack || err.message);
-        if (process.traceDeprecation)
-          console.trace(msg);
-        else
-          console.error(msg);
-      }
-    }
-  }
-}
-
-function maybeCallback(cb) {
-  return typeof cb === 'function' ? cb : rethrow();
-}
-
-var normalize = pathModule.normalize;
-
-// Regexp that finds the next partion of a (partial) path
-// result is [base_with_slash, base], e.g. ['somedir/', 'somedir']
-if (isWindows) {
-  var nextPartRe = /(.*?)(?:[\/\\]+|$)/g;
-} else {
-  var nextPartRe = /(.*?)(?:[\/]+|$)/g;
-}
-
-// Regex to find the device root, including trailing slash. E.g. 'c:\\'.
-if (isWindows) {
-  var splitRootRe = /^(?:[a-zA-Z]:|[\\\/]{2}[^\\\/]+[\\\/][^\\\/]+)?[\\\/]*/;
-} else {
-  var splitRootRe = /^[\/]*/;
-}
-
-exports.realpathSync = function realpathSync(p, cache) {
-  // make p is absolute
-  p = pathModule.resolve(p);
-
-  if (cache && Object.prototype.hasOwnProperty.call(cache, p)) {
-    return cache[p];
-  }
-
-  var original = p,
-      seenLinks = {},
-      knownHard = {};
-
-  // current character position in p
-  var pos;
-  // the partial path so far, including a trailing slash if any
-  var current;
-  // the partial path without a trailing slash (except when pointing at a root)
-  var base;
-  // the partial path scanned in the previous round, with slash
-  var previous;
-
-  start();
-
-  function start() {
-    // Skip over roots
-    var m = splitRootRe.exec(p);
-    pos = m[0].length;
-    current = m[0];
-    base = m[0];
-    previous = '';
-
-    // On windows, check that the root exists. On unix there is no need.
-    if (isWindows && !knownHard[base]) {
-      fs.lstatSync(base);
-      knownHard[base] = true;
-    }
-  }
-
-  // walk down the path, swapping out linked pathparts for their real
-  // values
-  // NB: p.length changes.
-  while (pos < p.length) {
-    // find the next part
-    nextPartRe.lastIndex = pos;
-    var result = nextPartRe.exec(p);
-    previous = current;
-    current += result[0];
-    base = previous + result[1];
-    pos = nextPartRe.lastIndex;
-
-    // continue if not a symlink
-    if (knownHard[base] || (cache && cache[base] === base)) {
-      continue;
-    }
-
-    var resolvedLink;
-    if (cache && Object.prototype.hasOwnProperty.call(cache, base)) {
-      // some known symbolic link.  no need to stat again.
-      resolvedLink = cache[base];
-    } else {
-      var stat = fs.lstatSync(base);
-      if (!stat.isSymbolicLink()) {
-        knownHard[base] = true;
-        if (cache) cache[base] = base;
-        continue;
-      }
-
-      // read the link if it wasn't read before
-      // dev/ino always return 0 on windows, so skip the check.
-      var linkTarget = null;
-      if (!isWindows) {
-        var id = stat.dev.toString(32) + ':' + stat.ino.toString(32);
-        if (seenLinks.hasOwnProperty(id)) {
-          linkTarget = seenLinks[id];
-        }
-      }
-      if (linkTarget === null) {
-        fs.statSync(base);
-        linkTarget = fs.readlinkSync(base);
-      }
-      resolvedLink = pathModule.resolve(previous, linkTarget);
-      // track this, if given a cache.
-      if (cache) cache[base] = resolvedLink;
-      if (!isWindows) seenLinks[id] = linkTarget;
-    }
-
-    // resolve the link, then start over
-    p = pathModule.resolve(resolvedLink, p.slice(pos));
-    start();
-  }
-
-  if (cache) cache[original] = p;
-
-  return p;
-};
-
-
-exports.realpath = function realpath(p, cache, cb) {
-  if (typeof cb !== 'function') {
-    cb = maybeCallback(cache);
-    cache = null;
-  }
-
-  // make p is absolute
-  p = pathModule.resolve(p);
-
-  if (cache && Object.prototype.hasOwnProperty.call(cache, p)) {
-    return process.nextTick(cb.bind(null, null, cache[p]));
-  }
-
-  var original = p,
-      seenLinks = {},
-      knownHard = {};
-
-  // current character position in p
-  var pos;
-  // the partial path so far, including a trailing slash if any
-  var current;
-  // the partial path without a trailing slash (except when pointing at a root)
-  var base;
-  // the partial path scanned in the previous round, with slash
-  var previous;
-
-  start();
-
-  function start() {
-    // Skip over roots
-    var m = splitRootRe.exec(p);
-    pos = m[0].length;
-    current = m[0];
-    base = m[0];
-    previous = '';
-
-    // On windows, check that the root exists. On unix there is no need.
-    if (isWindows && !knownHard[base]) {
-      fs.lstat(base, function(err) {
-        if (err) return cb(err);
-        knownHard[base] = true;
-        LOOP();
-      });
-    } else {
-      process.nextTick(LOOP);
-    }
-  }
-
-  // walk down the path, swapping out linked pathparts for their real
-  // values
-  function LOOP() {
-    // stop if scanned past end of path
-    if (pos >= p.length) {
-      if (cache) cache[original] = p;
-      return cb(null, p);
-    }
-
-    // find the next part
-    nextPartRe.lastIndex = pos;
-    var result = nextPartRe.exec(p);
-    previous = current;
-    current += result[0];
-    base = previous + result[1];
-    pos = nextPartRe.lastIndex;
-
-    // continue if not a symlink
-    if (knownHard[base] || (cache && cache[base] === base)) {
-      return process.nextTick(LOOP);
-    }
-
-    if (cache && Object.prototype.hasOwnProperty.call(cache, base)) {
-      // known symbolic link.  no need to stat again.
-      return gotResolvedLink(cache[base]);
-    }
-
-    return fs.lstat(base, gotStat);
-  }
-
-  function gotStat(err, stat) {
-    if (err) return cb(err);
-
-    // if not a symlink, skip to the next path part
-    if (!stat.isSymbolicLink()) {
-      knownHard[base] = true;
-      if (cache) cache[base] = base;
-      return process.nextTick(LOOP);
-    }
-
-    // stat & read the link if not read before
-    // call gotTarget as soon as the link target is known
-    // dev/ino always return 0 on windows, so skip the check.
-    if (!isWindows) {
-      var id = stat.dev.toString(32) + ':' + stat.ino.toString(32);
-      if (seenLinks.hasOwnProperty(id)) {
-        return gotTarget(null, seenLinks[id], base);
-      }
-    }
-    fs.stat(base, function(err) {
-      if (err) return cb(err);
-
-      fs.readlink(base, function(err, target) {
-        if (!isWindows) seenLinks[id] = target;
-        gotTarget(err, target);
-      });
-    });
-  }
-
-  function gotTarget(err, target, base) {
-    if (err) return cb(err);
-
-    var resolvedLink = pathModule.resolve(previous, target);
-    if (cache) cache[base] = resolvedLink;
-    gotResolvedLink(resolvedLink);
-  }
-
-  function gotResolvedLink(resolvedLink) {
-    // resolve the link, then start over
-    p = pathModule.resolve(resolvedLink, p.slice(pos));
-    start();
-  }
-};
-
-
-/***/ }),
-
 /***/ 1621:
 /***/ ((module) => {
 
 "use strict";
 
-
-module.exports = (flag, argv = process.argv) => {
+module.exports = (flag, argv) => {
+	argv = argv || process.argv;
 	const prefix = flag.startsWith('-') ? '' : (flag.length === 1 ? '-' : '--');
-	const position = argv.indexOf(prefix + flag);
-	const terminatorPosition = argv.indexOf('--');
-	return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
+	const pos = argv.indexOf(prefix + flag);
+	const terminatorPos = argv.indexOf('--');
+	return pos !== -1 && (terminatorPos === -1 ? true : pos < terminatorPos);
 };
 
 
@@ -14419,117 +13946,6 @@ function parseProxyResponse(socket) {
 }
 exports["default"] = parseProxyResponse;
 //# sourceMappingURL=parse-proxy-response.js.map
-
-/***/ }),
-
-/***/ 2492:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var wrappy = __nccwpck_require__(2940)
-var reqs = Object.create(null)
-var once = __nccwpck_require__(1223)
-
-module.exports = wrappy(inflight)
-
-function inflight (key, cb) {
-  if (reqs[key]) {
-    reqs[key].push(cb)
-    return null
-  } else {
-    reqs[key] = [cb]
-    return makeres(key)
-  }
-}
-
-function makeres (key) {
-  return once(function RES () {
-    var cbs = reqs[key]
-    var len = cbs.length
-    var args = slice(arguments)
-
-    // XXX It's somewhat ambiguous whether a new callback added in this
-    // pass should be queued for later execution if something in the
-    // list of callbacks throws, or if it should just be discarded.
-    // However, it's such an edge case that it hardly matters, and either
-    // choice is likely as surprising as the other.
-    // As it happens, we do go ahead and schedule it for later execution.
-    try {
-      for (var i = 0; i < len; i++) {
-        cbs[i].apply(null, args)
-      }
-    } finally {
-      if (cbs.length > len) {
-        // added more in the interim.
-        // de-zalgo, just in case, but don't call again.
-        cbs.splice(0, len)
-        process.nextTick(function () {
-          RES.apply(null, args)
-        })
-      } else {
-        delete reqs[key]
-      }
-    }
-  })
-}
-
-function slice (args) {
-  var length = args.length
-  var array = []
-
-  for (var i = 0; i < length; i++) array[i] = args[i]
-  return array
-}
-
-
-/***/ }),
-
-/***/ 4124:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-try {
-  var util = __nccwpck_require__(3837);
-  /* istanbul ignore next */
-  if (typeof util.inherits !== 'function') throw '';
-  module.exports = util.inherits;
-} catch (e) {
-  /* istanbul ignore next */
-  module.exports = __nccwpck_require__(8544);
-}
-
-
-/***/ }),
-
-/***/ 8544:
-/***/ ((module) => {
-
-if (typeof Object.create === 'function') {
-  // implementation from standard node.js 'util' module
-  module.exports = function inherits(ctor, superCtor) {
-    if (superCtor) {
-      ctor.super_ = superCtor
-      ctor.prototype = Object.create(superCtor.prototype, {
-        constructor: {
-          value: ctor,
-          enumerable: false,
-          writable: true,
-          configurable: true
-        }
-      })
-    }
-  };
-} else {
-  // old school shim for old browsers
-  module.exports = function inherits(ctor, superCtor) {
-    if (superCtor) {
-      ctor.super_ = superCtor
-      var TempCtor = function () {}
-      TempCtor.prototype = superCtor.prototype
-      ctor.prototype = new TempCtor()
-      ctor.prototype.constructor = ctor
-    }
-  }
-}
-
 
 /***/ }),
 
@@ -16810,66 +16226,29 @@ function onceStrict (fn) {
 
 /***/ }),
 
-/***/ 8714:
-/***/ ((module) => {
-
-"use strict";
-
-
-function posix(path) {
-	return path.charAt(0) === '/';
-}
-
-function win32(path) {
-	// https://github.com/nodejs/node/blob/b3fcc245fb25539909ef1d5eaa01dbf92e168633/lib/path.js#L56
-	var splitDeviceRe = /^([a-zA-Z]:|[\\\/]{2}[^\\\/]+[\\\/]+[^\\\/]+)?([\\\/])?([\s\S]*?)$/;
-	var result = splitDeviceRe.exec(path);
-	var device = result[1] || '';
-	var isUnc = Boolean(device && device.charAt(1) !== ':');
-
-	// UNC paths are always absolute
-	return Boolean(result[2] || isUnc);
-}
-
-module.exports = process.platform === 'win32' ? win32 : posix;
-module.exports.posix = posix;
-module.exports.win32 = win32;
-
-
-/***/ }),
-
 /***/ 9318:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
 const os = __nccwpck_require__(2037);
-const tty = __nccwpck_require__(6224);
 const hasFlag = __nccwpck_require__(1621);
 
-const {env} = process;
+const env = process.env;
 
 let forceColor;
 if (hasFlag('no-color') ||
 	hasFlag('no-colors') ||
-	hasFlag('color=false') ||
-	hasFlag('color=never')) {
-	forceColor = 0;
+	hasFlag('color=false')) {
+	forceColor = false;
 } else if (hasFlag('color') ||
 	hasFlag('colors') ||
 	hasFlag('color=true') ||
 	hasFlag('color=always')) {
-	forceColor = 1;
+	forceColor = true;
 }
-
 if ('FORCE_COLOR' in env) {
-	if (env.FORCE_COLOR === 'true') {
-		forceColor = 1;
-	} else if (env.FORCE_COLOR === 'false') {
-		forceColor = 0;
-	} else {
-		forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
-	}
+	forceColor = env.FORCE_COLOR.length === 0 || parseInt(env.FORCE_COLOR, 10) !== 0;
 }
 
 function translateLevel(level) {
@@ -16885,8 +16264,8 @@ function translateLevel(level) {
 	};
 }
 
-function supportsColor(haveStream, streamIsTTY) {
-	if (forceColor === 0) {
+function supportsColor(stream) {
+	if (forceColor === false) {
 		return 0;
 	}
 
@@ -16900,21 +16279,22 @@ function supportsColor(haveStream, streamIsTTY) {
 		return 2;
 	}
 
-	if (haveStream && !streamIsTTY && forceColor === undefined) {
+	if (stream && !stream.isTTY && forceColor !== true) {
 		return 0;
 	}
 
-	const min = forceColor || 0;
-
-	if (env.TERM === 'dumb') {
-		return min;
-	}
+	const min = forceColor ? 1 : 0;
 
 	if (process.platform === 'win32') {
-		// Windows 10 build 10586 is the first Windows release that supports 256 colors.
-		// Windows 10 build 14931 is the first release that supports 16m/TrueColor.
+		// Node.js 7.5.0 is the first version of Node.js to include a patch to
+		// libuv that enables 256 color output on Windows. Anything earlier and it
+		// won't work. However, here we target Node.js 8 at minimum as it is an LTS
+		// release, and Node.js 7 is not. Windows 10 build 10586 is the first Windows
+		// release that supports 256 colors. Windows 10 build 14931 is the first release
+		// that supports 16m/TrueColor.
 		const osRelease = os.release().split('.');
 		if (
+			Number(process.versions.node.split('.')[0]) >= 8 &&
 			Number(osRelease[0]) >= 10 &&
 			Number(osRelease[2]) >= 10586
 		) {
@@ -16925,7 +16305,7 @@ function supportsColor(haveStream, streamIsTTY) {
 	}
 
 	if ('CI' in env) {
-		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'GITHUB_ACTIONS', 'BUILDKITE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
+		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
 			return 1;
 		}
 
@@ -16964,18 +16344,22 @@ function supportsColor(haveStream, streamIsTTY) {
 		return 1;
 	}
 
+	if (env.TERM === 'dumb') {
+		return min;
+	}
+
 	return min;
 }
 
 function getSupportLevel(stream) {
-	const level = supportsColor(stream, stream && stream.isTTY);
+	const level = supportsColor(stream);
 	return translateLevel(level);
 }
 
 module.exports = {
 	supportsColor: getSupportLevel,
-	stdout: translateLevel(supportsColor(true, tty.isatty(1))),
-	stderr: translateLevel(supportsColor(true, tty.isatty(2)))
+	stdout: getSupportLevel(process.stdout),
+	stderr: getSupportLevel(process.stderr)
 };
 
 
@@ -17000,7 +16384,6 @@ const os = __nccwpck_require__(2037);
 const path = __nccwpck_require__(1017);
 const crypto = __nccwpck_require__(6113);
 const _c = { fs: fs.constants, os: os.constants };
-const rimraf = __nccwpck_require__(2371);
 
 /*
  * The working inner variables.
@@ -17029,11 +16412,31 @@ const
   _removeObjects = [],
 
   // API change in fs.rmdirSync leads to error when passing in a second parameter, e.g. the callback
-  FN_RMDIR_SYNC = fs.rmdirSync.bind(fs),
-  FN_RIMRAF_SYNC = rimraf.sync;
+  FN_RMDIR_SYNC = fs.rmdirSync.bind(fs);
 
 let
   _gracefulCleanup = false;
+
+/**
+ * Recursively remove a directory and its contents.
+ *
+ * @param {string} dirPath path of directory to remove
+ * @param {Function} callback
+ * @private
+ */
+function rimraf(dirPath, callback) {
+  return fs.rm(dirPath, { recursive: true }, callback);
+}
+
+/**
+ * Recursively remove a directory and its contents, synchronously.
+ *
+ * @param {string} dirPath path of directory to remove
+ * @private
+ */
+function FN_RIMRAF_SYNC(dirPath) {
+  return fs.rmSync(dirPath, { recursive: true });
+}
 
 /**
  * Gets a temporary file name.
@@ -17521,7 +16924,7 @@ function _assertAndSanitizeOptions(options) {
   options.template = _isBlank(options.template) ? undefined : path.relative(options.dir, options.template);
 
   // for completeness' sake only, also keep (multiple) blanks if the user, purportedly sane, requests us to
-  options.name = _isUndefined(options.name) ? undefined : _sanitizeName(options.name);
+  options.name = _isUndefined(options.name) ? undefined : options.name;
   options.prefix = _isUndefined(options.prefix) ? '' : options.prefix;
   options.postfix = _isUndefined(options.postfix) ? '' : options.postfix;
 }
@@ -17538,26 +16941,11 @@ function _assertAndSanitizeOptions(options) {
  * @private
  */
 function _resolvePath(name, tmpDir) {
-  const sanitizedName = _sanitizeName(name);
-  if (sanitizedName.startsWith(tmpDir)) {
-    return path.resolve(sanitizedName);
+  if (name.startsWith(tmpDir)) {
+    return path.resolve(name);
   } else {
-    return path.resolve(path.join(tmpDir, sanitizedName));
+    return path.resolve(path.join(tmpDir, name));
   }
-}
-
-/**
- * Sanitize the specified path name by removing all quote characters.
- *
- * @param name
- * @returns {string}
- * @private
- */
-function _sanitizeName(name) {
-  if (_isBlank(name)) {
-    return name;
-  }
-  return name.replace(/["']/g, '');
 }
 
 /**
@@ -17649,7 +17037,7 @@ function setGracefulCleanup() {
  * @returns {string} the currently configured tmp dir
  */
 function _getTmpDir(options) {
-  return path.resolve(_sanitizeName(options && options.tmpdir || os.tmpdir()));
+  return path.resolve(options && options.tmpdir || os.tmpdir());
 }
 
 // Install process exit listener
@@ -17764,3070 +17152,6 @@ module.exports.tmpName = tmpName;
 module.exports.tmpNameSync = tmpNameSync;
 
 module.exports.setGracefulCleanup = setGracefulCleanup;
-
-
-/***/ }),
-
-/***/ 9094:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var concatMap = __nccwpck_require__(6891);
-var balanced = __nccwpck_require__(9417);
-
-module.exports = expandTop;
-
-var escSlash = '\0SLASH'+Math.random()+'\0';
-var escOpen = '\0OPEN'+Math.random()+'\0';
-var escClose = '\0CLOSE'+Math.random()+'\0';
-var escComma = '\0COMMA'+Math.random()+'\0';
-var escPeriod = '\0PERIOD'+Math.random()+'\0';
-
-function numeric(str) {
-  return parseInt(str, 10) == str
-    ? parseInt(str, 10)
-    : str.charCodeAt(0);
-}
-
-function escapeBraces(str) {
-  return str.split('\\\\').join(escSlash)
-            .split('\\{').join(escOpen)
-            .split('\\}').join(escClose)
-            .split('\\,').join(escComma)
-            .split('\\.').join(escPeriod);
-}
-
-function unescapeBraces(str) {
-  return str.split(escSlash).join('\\')
-            .split(escOpen).join('{')
-            .split(escClose).join('}')
-            .split(escComma).join(',')
-            .split(escPeriod).join('.');
-}
-
-
-// Basically just str.split(","), but handling cases
-// where we have nested braced sections, which should be
-// treated as individual members, like {a,{b,c},d}
-function parseCommaParts(str) {
-  if (!str)
-    return [''];
-
-  var parts = [];
-  var m = balanced('{', '}', str);
-
-  if (!m)
-    return str.split(',');
-
-  var pre = m.pre;
-  var body = m.body;
-  var post = m.post;
-  var p = pre.split(',');
-
-  p[p.length-1] += '{' + body + '}';
-  var postParts = parseCommaParts(post);
-  if (post.length) {
-    p[p.length-1] += postParts.shift();
-    p.push.apply(p, postParts);
-  }
-
-  parts.push.apply(parts, p);
-
-  return parts;
-}
-
-function expandTop(str) {
-  if (!str)
-    return [];
-
-  // I don't know why Bash 4.3 does this, but it does.
-  // Anything starting with {} will have the first two bytes preserved
-  // but *only* at the top level, so {},a}b will not expand to anything,
-  // but a{},b}c will be expanded to [a}c,abc].
-  // One could argue that this is a bug in Bash, but since the goal of
-  // this module is to match Bash's rules, we escape a leading {}
-  if (str.substr(0, 2) === '{}') {
-    str = '\\{\\}' + str.substr(2);
-  }
-
-  return expand(escapeBraces(str), true).map(unescapeBraces);
-}
-
-function identity(e) {
-  return e;
-}
-
-function embrace(str) {
-  return '{' + str + '}';
-}
-function isPadded(el) {
-  return /^-?0\d/.test(el);
-}
-
-function lte(i, y) {
-  return i <= y;
-}
-function gte(i, y) {
-  return i >= y;
-}
-
-function expand(str, isTop) {
-  var expansions = [];
-
-  var m = balanced('{', '}', str);
-  if (!m || /\$$/.test(m.pre)) return [str];
-
-  var isNumericSequence = /^-?\d+\.\.-?\d+(?:\.\.-?\d+)?$/.test(m.body);
-  var isAlphaSequence = /^[a-zA-Z]\.\.[a-zA-Z](?:\.\.-?\d+)?$/.test(m.body);
-  var isSequence = isNumericSequence || isAlphaSequence;
-  var isOptions = m.body.indexOf(',') >= 0;
-  if (!isSequence && !isOptions) {
-    // {a},b}
-    if (m.post.match(/,.*\}/)) {
-      str = m.pre + '{' + m.body + escClose + m.post;
-      return expand(str);
-    }
-    return [str];
-  }
-
-  var n;
-  if (isSequence) {
-    n = m.body.split(/\.\./);
-  } else {
-    n = parseCommaParts(m.body);
-    if (n.length === 1) {
-      // x{{a,b}}y ==> x{a}y x{b}y
-      n = expand(n[0], false).map(embrace);
-      if (n.length === 1) {
-        var post = m.post.length
-          ? expand(m.post, false)
-          : [''];
-        return post.map(function(p) {
-          return m.pre + n[0] + p;
-        });
-      }
-    }
-  }
-
-  // at this point, n is the parts, and we know it's not a comma set
-  // with a single entry.
-
-  // no need to expand pre, since it is guaranteed to be free of brace-sets
-  var pre = m.pre;
-  var post = m.post.length
-    ? expand(m.post, false)
-    : [''];
-
-  var N;
-
-  if (isSequence) {
-    var x = numeric(n[0]);
-    var y = numeric(n[1]);
-    var width = Math.max(n[0].length, n[1].length)
-    var incr = n.length == 3
-      ? Math.abs(numeric(n[2]))
-      : 1;
-    var test = lte;
-    var reverse = y < x;
-    if (reverse) {
-      incr *= -1;
-      test = gte;
-    }
-    var pad = n.some(isPadded);
-
-    N = [];
-
-    for (var i = x; test(i, y); i += incr) {
-      var c;
-      if (isAlphaSequence) {
-        c = String.fromCharCode(i);
-        if (c === '\\')
-          c = '';
-      } else {
-        c = String(i);
-        if (pad) {
-          var need = width - c.length;
-          if (need > 0) {
-            var z = new Array(need + 1).join('0');
-            if (i < 0)
-              c = '-' + z + c.slice(1);
-            else
-              c = z + c;
-          }
-        }
-      }
-      N.push(c);
-    }
-  } else {
-    N = concatMap(n, function(el) { return expand(el, false) });
-  }
-
-  for (var j = 0; j < N.length; j++) {
-    for (var k = 0; k < post.length; k++) {
-      var expansion = pre + N[j] + post[k];
-      if (!isTop || isSequence || expansion)
-        expansions.push(expansion);
-    }
-  }
-
-  return expansions;
-}
-
-
-
-/***/ }),
-
-/***/ 2225:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-exports.setopts = setopts
-exports.ownProp = ownProp
-exports.makeAbs = makeAbs
-exports.finish = finish
-exports.mark = mark
-exports.isIgnored = isIgnored
-exports.childrenIgnored = childrenIgnored
-
-function ownProp (obj, field) {
-  return Object.prototype.hasOwnProperty.call(obj, field)
-}
-
-var fs = __nccwpck_require__(7147)
-var path = __nccwpck_require__(1017)
-var minimatch = __nccwpck_require__(491)
-var isAbsolute = __nccwpck_require__(8714)
-var Minimatch = minimatch.Minimatch
-
-function alphasort (a, b) {
-  return a.localeCompare(b, 'en')
-}
-
-function setupIgnores (self, options) {
-  self.ignore = options.ignore || []
-
-  if (!Array.isArray(self.ignore))
-    self.ignore = [self.ignore]
-
-  if (self.ignore.length) {
-    self.ignore = self.ignore.map(ignoreMap)
-  }
-}
-
-// ignore patterns are always in dot:true mode.
-function ignoreMap (pattern) {
-  var gmatcher = null
-  if (pattern.slice(-3) === '/**') {
-    var gpattern = pattern.replace(/(\/\*\*)+$/, '')
-    gmatcher = new Minimatch(gpattern, { dot: true })
-  }
-
-  return {
-    matcher: new Minimatch(pattern, { dot: true }),
-    gmatcher: gmatcher
-  }
-}
-
-function setopts (self, pattern, options) {
-  if (!options)
-    options = {}
-
-  // base-matching: just use globstar for that.
-  if (options.matchBase && -1 === pattern.indexOf("/")) {
-    if (options.noglobstar) {
-      throw new Error("base matching requires globstar")
-    }
-    pattern = "**/" + pattern
-  }
-
-  self.silent = !!options.silent
-  self.pattern = pattern
-  self.strict = options.strict !== false
-  self.realpath = !!options.realpath
-  self.realpathCache = options.realpathCache || Object.create(null)
-  self.follow = !!options.follow
-  self.dot = !!options.dot
-  self.mark = !!options.mark
-  self.nodir = !!options.nodir
-  if (self.nodir)
-    self.mark = true
-  self.sync = !!options.sync
-  self.nounique = !!options.nounique
-  self.nonull = !!options.nonull
-  self.nosort = !!options.nosort
-  self.nocase = !!options.nocase
-  self.stat = !!options.stat
-  self.noprocess = !!options.noprocess
-  self.absolute = !!options.absolute
-  self.fs = options.fs || fs
-
-  self.maxLength = options.maxLength || Infinity
-  self.cache = options.cache || Object.create(null)
-  self.statCache = options.statCache || Object.create(null)
-  self.symlinks = options.symlinks || Object.create(null)
-
-  setupIgnores(self, options)
-
-  self.changedCwd = false
-  var cwd = process.cwd()
-  if (!ownProp(options, "cwd"))
-    self.cwd = cwd
-  else {
-    self.cwd = path.resolve(options.cwd)
-    self.changedCwd = self.cwd !== cwd
-  }
-
-  self.root = options.root || path.resolve(self.cwd, "/")
-  self.root = path.resolve(self.root)
-  if (process.platform === "win32")
-    self.root = self.root.replace(/\\/g, "/")
-
-  // TODO: is an absolute `cwd` supposed to be resolved against `root`?
-  // e.g. { cwd: '/test', root: __dirname } === path.join(__dirname, '/test')
-  self.cwdAbs = isAbsolute(self.cwd) ? self.cwd : makeAbs(self, self.cwd)
-  if (process.platform === "win32")
-    self.cwdAbs = self.cwdAbs.replace(/\\/g, "/")
-  self.nomount = !!options.nomount
-
-  // disable comments and negation in Minimatch.
-  // Note that they are not supported in Glob itself anyway.
-  options.nonegate = true
-  options.nocomment = true
-  // always treat \ in patterns as escapes, not path separators
-  options.allowWindowsEscape = false
-
-  self.minimatch = new Minimatch(pattern, options)
-  self.options = self.minimatch.options
-}
-
-function finish (self) {
-  var nou = self.nounique
-  var all = nou ? [] : Object.create(null)
-
-  for (var i = 0, l = self.matches.length; i < l; i ++) {
-    var matches = self.matches[i]
-    if (!matches || Object.keys(matches).length === 0) {
-      if (self.nonull) {
-        // do like the shell, and spit out the literal glob
-        var literal = self.minimatch.globSet[i]
-        if (nou)
-          all.push(literal)
-        else
-          all[literal] = true
-      }
-    } else {
-      // had matches
-      var m = Object.keys(matches)
-      if (nou)
-        all.push.apply(all, m)
-      else
-        m.forEach(function (m) {
-          all[m] = true
-        })
-    }
-  }
-
-  if (!nou)
-    all = Object.keys(all)
-
-  if (!self.nosort)
-    all = all.sort(alphasort)
-
-  // at *some* point we statted all of these
-  if (self.mark) {
-    for (var i = 0; i < all.length; i++) {
-      all[i] = self._mark(all[i])
-    }
-    if (self.nodir) {
-      all = all.filter(function (e) {
-        var notDir = !(/\/$/.test(e))
-        var c = self.cache[e] || self.cache[makeAbs(self, e)]
-        if (notDir && c)
-          notDir = c !== 'DIR' && !Array.isArray(c)
-        return notDir
-      })
-    }
-  }
-
-  if (self.ignore.length)
-    all = all.filter(function(m) {
-      return !isIgnored(self, m)
-    })
-
-  self.found = all
-}
-
-function mark (self, p) {
-  var abs = makeAbs(self, p)
-  var c = self.cache[abs]
-  var m = p
-  if (c) {
-    var isDir = c === 'DIR' || Array.isArray(c)
-    var slash = p.slice(-1) === '/'
-
-    if (isDir && !slash)
-      m += '/'
-    else if (!isDir && slash)
-      m = m.slice(0, -1)
-
-    if (m !== p) {
-      var mabs = makeAbs(self, m)
-      self.statCache[mabs] = self.statCache[abs]
-      self.cache[mabs] = self.cache[abs]
-    }
-  }
-
-  return m
-}
-
-// lotta situps...
-function makeAbs (self, f) {
-  var abs = f
-  if (f.charAt(0) === '/') {
-    abs = path.join(self.root, f)
-  } else if (isAbsolute(f) || f === '') {
-    abs = f
-  } else if (self.changedCwd) {
-    abs = path.resolve(self.cwd, f)
-  } else {
-    abs = path.resolve(f)
-  }
-
-  if (process.platform === 'win32')
-    abs = abs.replace(/\\/g, '/')
-
-  return abs
-}
-
-
-// Return true, if pattern ends with globstar '**', for the accompanying parent directory.
-// Ex:- If node_modules/** is the pattern, add 'node_modules' to ignore list along with it's contents
-function isIgnored (self, path) {
-  if (!self.ignore.length)
-    return false
-
-  return self.ignore.some(function(item) {
-    return item.matcher.match(path) || !!(item.gmatcher && item.gmatcher.match(path))
-  })
-}
-
-function childrenIgnored (self, path) {
-  if (!self.ignore.length)
-    return false
-
-  return self.ignore.some(function(item) {
-    return !!(item.gmatcher && item.gmatcher.match(path))
-  })
-}
-
-
-/***/ }),
-
-/***/ 9056:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-// Approach:
-//
-// 1. Get the minimatch set
-// 2. For each pattern in the set, PROCESS(pattern, false)
-// 3. Store matches per-set, then uniq them
-//
-// PROCESS(pattern, inGlobStar)
-// Get the first [n] items from pattern that are all strings
-// Join these together.  This is PREFIX.
-//   If there is no more remaining, then stat(PREFIX) and
-//   add to matches if it succeeds.  END.
-//
-// If inGlobStar and PREFIX is symlink and points to dir
-//   set ENTRIES = []
-// else readdir(PREFIX) as ENTRIES
-//   If fail, END
-//
-// with ENTRIES
-//   If pattern[n] is GLOBSTAR
-//     // handle the case where the globstar match is empty
-//     // by pruning it out, and testing the resulting pattern
-//     PROCESS(pattern[0..n] + pattern[n+1 .. $], false)
-//     // handle other cases.
-//     for ENTRY in ENTRIES (not dotfiles)
-//       // attach globstar + tail onto the entry
-//       // Mark that this entry is a globstar match
-//       PROCESS(pattern[0..n] + ENTRY + pattern[n .. $], true)
-//
-//   else // not globstar
-//     for ENTRY in ENTRIES (not dotfiles, unless pattern[n] is dot)
-//       Test ENTRY against pattern[n]
-//       If fails, continue
-//       If passes, PROCESS(pattern[0..n] + item + pattern[n+1 .. $])
-//
-// Caveat:
-//   Cache all stats and readdirs results to minimize syscall.  Since all
-//   we ever care about is existence and directory-ness, we can just keep
-//   `true` for files, and [children,...] for directories, or `false` for
-//   things that don't exist.
-
-module.exports = glob
-
-var rp = __nccwpck_require__(6863)
-var minimatch = __nccwpck_require__(491)
-var Minimatch = minimatch.Minimatch
-var inherits = __nccwpck_require__(4124)
-var EE = (__nccwpck_require__(2361).EventEmitter)
-var path = __nccwpck_require__(1017)
-var assert = __nccwpck_require__(9491)
-var isAbsolute = __nccwpck_require__(8714)
-var globSync = __nccwpck_require__(4235)
-var common = __nccwpck_require__(2225)
-var setopts = common.setopts
-var ownProp = common.ownProp
-var inflight = __nccwpck_require__(2492)
-var util = __nccwpck_require__(3837)
-var childrenIgnored = common.childrenIgnored
-var isIgnored = common.isIgnored
-
-var once = __nccwpck_require__(1223)
-
-function glob (pattern, options, cb) {
-  if (typeof options === 'function') cb = options, options = {}
-  if (!options) options = {}
-
-  if (options.sync) {
-    if (cb)
-      throw new TypeError('callback provided to sync glob')
-    return globSync(pattern, options)
-  }
-
-  return new Glob(pattern, options, cb)
-}
-
-glob.sync = globSync
-var GlobSync = glob.GlobSync = globSync.GlobSync
-
-// old api surface
-glob.glob = glob
-
-function extend (origin, add) {
-  if (add === null || typeof add !== 'object') {
-    return origin
-  }
-
-  var keys = Object.keys(add)
-  var i = keys.length
-  while (i--) {
-    origin[keys[i]] = add[keys[i]]
-  }
-  return origin
-}
-
-glob.hasMagic = function (pattern, options_) {
-  var options = extend({}, options_)
-  options.noprocess = true
-
-  var g = new Glob(pattern, options)
-  var set = g.minimatch.set
-
-  if (!pattern)
-    return false
-
-  if (set.length > 1)
-    return true
-
-  for (var j = 0; j < set[0].length; j++) {
-    if (typeof set[0][j] !== 'string')
-      return true
-  }
-
-  return false
-}
-
-glob.Glob = Glob
-inherits(Glob, EE)
-function Glob (pattern, options, cb) {
-  if (typeof options === 'function') {
-    cb = options
-    options = null
-  }
-
-  if (options && options.sync) {
-    if (cb)
-      throw new TypeError('callback provided to sync glob')
-    return new GlobSync(pattern, options)
-  }
-
-  if (!(this instanceof Glob))
-    return new Glob(pattern, options, cb)
-
-  setopts(this, pattern, options)
-  this._didRealPath = false
-
-  // process each pattern in the minimatch set
-  var n = this.minimatch.set.length
-
-  // The matches are stored as {<filename>: true,...} so that
-  // duplicates are automagically pruned.
-  // Later, we do an Object.keys() on these.
-  // Keep them as a list so we can fill in when nonull is set.
-  this.matches = new Array(n)
-
-  if (typeof cb === 'function') {
-    cb = once(cb)
-    this.on('error', cb)
-    this.on('end', function (matches) {
-      cb(null, matches)
-    })
-  }
-
-  var self = this
-  this._processing = 0
-
-  this._emitQueue = []
-  this._processQueue = []
-  this.paused = false
-
-  if (this.noprocess)
-    return this
-
-  if (n === 0)
-    return done()
-
-  var sync = true
-  for (var i = 0; i < n; i ++) {
-    this._process(this.minimatch.set[i], i, false, done)
-  }
-  sync = false
-
-  function done () {
-    --self._processing
-    if (self._processing <= 0) {
-      if (sync) {
-        process.nextTick(function () {
-          self._finish()
-        })
-      } else {
-        self._finish()
-      }
-    }
-  }
-}
-
-Glob.prototype._finish = function () {
-  assert(this instanceof Glob)
-  if (this.aborted)
-    return
-
-  if (this.realpath && !this._didRealpath)
-    return this._realpath()
-
-  common.finish(this)
-  this.emit('end', this.found)
-}
-
-Glob.prototype._realpath = function () {
-  if (this._didRealpath)
-    return
-
-  this._didRealpath = true
-
-  var n = this.matches.length
-  if (n === 0)
-    return this._finish()
-
-  var self = this
-  for (var i = 0; i < this.matches.length; i++)
-    this._realpathSet(i, next)
-
-  function next () {
-    if (--n === 0)
-      self._finish()
-  }
-}
-
-Glob.prototype._realpathSet = function (index, cb) {
-  var matchset = this.matches[index]
-  if (!matchset)
-    return cb()
-
-  var found = Object.keys(matchset)
-  var self = this
-  var n = found.length
-
-  if (n === 0)
-    return cb()
-
-  var set = this.matches[index] = Object.create(null)
-  found.forEach(function (p, i) {
-    // If there's a problem with the stat, then it means that
-    // one or more of the links in the realpath couldn't be
-    // resolved.  just return the abs value in that case.
-    p = self._makeAbs(p)
-    rp.realpath(p, self.realpathCache, function (er, real) {
-      if (!er)
-        set[real] = true
-      else if (er.syscall === 'stat')
-        set[p] = true
-      else
-        self.emit('error', er) // srsly wtf right here
-
-      if (--n === 0) {
-        self.matches[index] = set
-        cb()
-      }
-    })
-  })
-}
-
-Glob.prototype._mark = function (p) {
-  return common.mark(this, p)
-}
-
-Glob.prototype._makeAbs = function (f) {
-  return common.makeAbs(this, f)
-}
-
-Glob.prototype.abort = function () {
-  this.aborted = true
-  this.emit('abort')
-}
-
-Glob.prototype.pause = function () {
-  if (!this.paused) {
-    this.paused = true
-    this.emit('pause')
-  }
-}
-
-Glob.prototype.resume = function () {
-  if (this.paused) {
-    this.emit('resume')
-    this.paused = false
-    if (this._emitQueue.length) {
-      var eq = this._emitQueue.slice(0)
-      this._emitQueue.length = 0
-      for (var i = 0; i < eq.length; i ++) {
-        var e = eq[i]
-        this._emitMatch(e[0], e[1])
-      }
-    }
-    if (this._processQueue.length) {
-      var pq = this._processQueue.slice(0)
-      this._processQueue.length = 0
-      for (var i = 0; i < pq.length; i ++) {
-        var p = pq[i]
-        this._processing--
-        this._process(p[0], p[1], p[2], p[3])
-      }
-    }
-  }
-}
-
-Glob.prototype._process = function (pattern, index, inGlobStar, cb) {
-  assert(this instanceof Glob)
-  assert(typeof cb === 'function')
-
-  if (this.aborted)
-    return
-
-  this._processing++
-  if (this.paused) {
-    this._processQueue.push([pattern, index, inGlobStar, cb])
-    return
-  }
-
-  //console.error('PROCESS %d', this._processing, pattern)
-
-  // Get the first [n] parts of pattern that are all strings.
-  var n = 0
-  while (typeof pattern[n] === 'string') {
-    n ++
-  }
-  // now n is the index of the first one that is *not* a string.
-
-  // see if there's anything else
-  var prefix
-  switch (n) {
-    // if not, then this is rather simple
-    case pattern.length:
-      this._processSimple(pattern.join('/'), index, cb)
-      return
-
-    case 0:
-      // pattern *starts* with some non-trivial item.
-      // going to readdir(cwd), but not include the prefix in matches.
-      prefix = null
-      break
-
-    default:
-      // pattern has some string bits in the front.
-      // whatever it starts with, whether that's 'absolute' like /foo/bar,
-      // or 'relative' like '../baz'
-      prefix = pattern.slice(0, n).join('/')
-      break
-  }
-
-  var remain = pattern.slice(n)
-
-  // get the list of entries.
-  var read
-  if (prefix === null)
-    read = '.'
-  else if (isAbsolute(prefix) ||
-      isAbsolute(pattern.map(function (p) {
-        return typeof p === 'string' ? p : '[*]'
-      }).join('/'))) {
-    if (!prefix || !isAbsolute(prefix))
-      prefix = '/' + prefix
-    read = prefix
-  } else
-    read = prefix
-
-  var abs = this._makeAbs(read)
-
-  //if ignored, skip _processing
-  if (childrenIgnored(this, read))
-    return cb()
-
-  var isGlobStar = remain[0] === minimatch.GLOBSTAR
-  if (isGlobStar)
-    this._processGlobStar(prefix, read, abs, remain, index, inGlobStar, cb)
-  else
-    this._processReaddir(prefix, read, abs, remain, index, inGlobStar, cb)
-}
-
-Glob.prototype._processReaddir = function (prefix, read, abs, remain, index, inGlobStar, cb) {
-  var self = this
-  this._readdir(abs, inGlobStar, function (er, entries) {
-    return self._processReaddir2(prefix, read, abs, remain, index, inGlobStar, entries, cb)
-  })
-}
-
-Glob.prototype._processReaddir2 = function (prefix, read, abs, remain, index, inGlobStar, entries, cb) {
-
-  // if the abs isn't a dir, then nothing can match!
-  if (!entries)
-    return cb()
-
-  // It will only match dot entries if it starts with a dot, or if
-  // dot is set.  Stuff like @(.foo|.bar) isn't allowed.
-  var pn = remain[0]
-  var negate = !!this.minimatch.negate
-  var rawGlob = pn._glob
-  var dotOk = this.dot || rawGlob.charAt(0) === '.'
-
-  var matchedEntries = []
-  for (var i = 0; i < entries.length; i++) {
-    var e = entries[i]
-    if (e.charAt(0) !== '.' || dotOk) {
-      var m
-      if (negate && !prefix) {
-        m = !e.match(pn)
-      } else {
-        m = e.match(pn)
-      }
-      if (m)
-        matchedEntries.push(e)
-    }
-  }
-
-  //console.error('prd2', prefix, entries, remain[0]._glob, matchedEntries)
-
-  var len = matchedEntries.length
-  // If there are no matched entries, then nothing matches.
-  if (len === 0)
-    return cb()
-
-  // if this is the last remaining pattern bit, then no need for
-  // an additional stat *unless* the user has specified mark or
-  // stat explicitly.  We know they exist, since readdir returned
-  // them.
-
-  if (remain.length === 1 && !this.mark && !this.stat) {
-    if (!this.matches[index])
-      this.matches[index] = Object.create(null)
-
-    for (var i = 0; i < len; i ++) {
-      var e = matchedEntries[i]
-      if (prefix) {
-        if (prefix !== '/')
-          e = prefix + '/' + e
-        else
-          e = prefix + e
-      }
-
-      if (e.charAt(0) === '/' && !this.nomount) {
-        e = path.join(this.root, e)
-      }
-      this._emitMatch(index, e)
-    }
-    // This was the last one, and no stats were needed
-    return cb()
-  }
-
-  // now test all matched entries as stand-ins for that part
-  // of the pattern.
-  remain.shift()
-  for (var i = 0; i < len; i ++) {
-    var e = matchedEntries[i]
-    var newPattern
-    if (prefix) {
-      if (prefix !== '/')
-        e = prefix + '/' + e
-      else
-        e = prefix + e
-    }
-    this._process([e].concat(remain), index, inGlobStar, cb)
-  }
-  cb()
-}
-
-Glob.prototype._emitMatch = function (index, e) {
-  if (this.aborted)
-    return
-
-  if (isIgnored(this, e))
-    return
-
-  if (this.paused) {
-    this._emitQueue.push([index, e])
-    return
-  }
-
-  var abs = isAbsolute(e) ? e : this._makeAbs(e)
-
-  if (this.mark)
-    e = this._mark(e)
-
-  if (this.absolute)
-    e = abs
-
-  if (this.matches[index][e])
-    return
-
-  if (this.nodir) {
-    var c = this.cache[abs]
-    if (c === 'DIR' || Array.isArray(c))
-      return
-  }
-
-  this.matches[index][e] = true
-
-  var st = this.statCache[abs]
-  if (st)
-    this.emit('stat', e, st)
-
-  this.emit('match', e)
-}
-
-Glob.prototype._readdirInGlobStar = function (abs, cb) {
-  if (this.aborted)
-    return
-
-  // follow all symlinked directories forever
-  // just proceed as if this is a non-globstar situation
-  if (this.follow)
-    return this._readdir(abs, false, cb)
-
-  var lstatkey = 'lstat\0' + abs
-  var self = this
-  var lstatcb = inflight(lstatkey, lstatcb_)
-
-  if (lstatcb)
-    self.fs.lstat(abs, lstatcb)
-
-  function lstatcb_ (er, lstat) {
-    if (er && er.code === 'ENOENT')
-      return cb()
-
-    var isSym = lstat && lstat.isSymbolicLink()
-    self.symlinks[abs] = isSym
-
-    // If it's not a symlink or a dir, then it's definitely a regular file.
-    // don't bother doing a readdir in that case.
-    if (!isSym && lstat && !lstat.isDirectory()) {
-      self.cache[abs] = 'FILE'
-      cb()
-    } else
-      self._readdir(abs, false, cb)
-  }
-}
-
-Glob.prototype._readdir = function (abs, inGlobStar, cb) {
-  if (this.aborted)
-    return
-
-  cb = inflight('readdir\0'+abs+'\0'+inGlobStar, cb)
-  if (!cb)
-    return
-
-  //console.error('RD %j %j', +inGlobStar, abs)
-  if (inGlobStar && !ownProp(this.symlinks, abs))
-    return this._readdirInGlobStar(abs, cb)
-
-  if (ownProp(this.cache, abs)) {
-    var c = this.cache[abs]
-    if (!c || c === 'FILE')
-      return cb()
-
-    if (Array.isArray(c))
-      return cb(null, c)
-  }
-
-  var self = this
-  self.fs.readdir(abs, readdirCb(this, abs, cb))
-}
-
-function readdirCb (self, abs, cb) {
-  return function (er, entries) {
-    if (er)
-      self._readdirError(abs, er, cb)
-    else
-      self._readdirEntries(abs, entries, cb)
-  }
-}
-
-Glob.prototype._readdirEntries = function (abs, entries, cb) {
-  if (this.aborted)
-    return
-
-  // if we haven't asked to stat everything, then just
-  // assume that everything in there exists, so we can avoid
-  // having to stat it a second time.
-  if (!this.mark && !this.stat) {
-    for (var i = 0; i < entries.length; i ++) {
-      var e = entries[i]
-      if (abs === '/')
-        e = abs + e
-      else
-        e = abs + '/' + e
-      this.cache[e] = true
-    }
-  }
-
-  this.cache[abs] = entries
-  return cb(null, entries)
-}
-
-Glob.prototype._readdirError = function (f, er, cb) {
-  if (this.aborted)
-    return
-
-  // handle errors, and cache the information
-  switch (er.code) {
-    case 'ENOTSUP': // https://github.com/isaacs/node-glob/issues/205
-    case 'ENOTDIR': // totally normal. means it *does* exist.
-      var abs = this._makeAbs(f)
-      this.cache[abs] = 'FILE'
-      if (abs === this.cwdAbs) {
-        var error = new Error(er.code + ' invalid cwd ' + this.cwd)
-        error.path = this.cwd
-        error.code = er.code
-        this.emit('error', error)
-        this.abort()
-      }
-      break
-
-    case 'ENOENT': // not terribly unusual
-    case 'ELOOP':
-    case 'ENAMETOOLONG':
-    case 'UNKNOWN':
-      this.cache[this._makeAbs(f)] = false
-      break
-
-    default: // some unusual error.  Treat as failure.
-      this.cache[this._makeAbs(f)] = false
-      if (this.strict) {
-        this.emit('error', er)
-        // If the error is handled, then we abort
-        // if not, we threw out of here
-        this.abort()
-      }
-      if (!this.silent)
-        console.error('glob error', er)
-      break
-  }
-
-  return cb()
-}
-
-Glob.prototype._processGlobStar = function (prefix, read, abs, remain, index, inGlobStar, cb) {
-  var self = this
-  this._readdir(abs, inGlobStar, function (er, entries) {
-    self._processGlobStar2(prefix, read, abs, remain, index, inGlobStar, entries, cb)
-  })
-}
-
-
-Glob.prototype._processGlobStar2 = function (prefix, read, abs, remain, index, inGlobStar, entries, cb) {
-  //console.error('pgs2', prefix, remain[0], entries)
-
-  // no entries means not a dir, so it can never have matches
-  // foo.txt/** doesn't match foo.txt
-  if (!entries)
-    return cb()
-
-  // test without the globstar, and with every child both below
-  // and replacing the globstar.
-  var remainWithoutGlobStar = remain.slice(1)
-  var gspref = prefix ? [ prefix ] : []
-  var noGlobStar = gspref.concat(remainWithoutGlobStar)
-
-  // the noGlobStar pattern exits the inGlobStar state
-  this._process(noGlobStar, index, false, cb)
-
-  var isSym = this.symlinks[abs]
-  var len = entries.length
-
-  // If it's a symlink, and we're in a globstar, then stop
-  if (isSym && inGlobStar)
-    return cb()
-
-  for (var i = 0; i < len; i++) {
-    var e = entries[i]
-    if (e.charAt(0) === '.' && !this.dot)
-      continue
-
-    // these two cases enter the inGlobStar state
-    var instead = gspref.concat(entries[i], remainWithoutGlobStar)
-    this._process(instead, index, true, cb)
-
-    var below = gspref.concat(entries[i], remain)
-    this._process(below, index, true, cb)
-  }
-
-  cb()
-}
-
-Glob.prototype._processSimple = function (prefix, index, cb) {
-  // XXX review this.  Shouldn't it be doing the mounting etc
-  // before doing stat?  kinda weird?
-  var self = this
-  this._stat(prefix, function (er, exists) {
-    self._processSimple2(prefix, index, er, exists, cb)
-  })
-}
-Glob.prototype._processSimple2 = function (prefix, index, er, exists, cb) {
-
-  //console.error('ps2', prefix, exists)
-
-  if (!this.matches[index])
-    this.matches[index] = Object.create(null)
-
-  // If it doesn't exist, then just mark the lack of results
-  if (!exists)
-    return cb()
-
-  if (prefix && isAbsolute(prefix) && !this.nomount) {
-    var trail = /[\/\\]$/.test(prefix)
-    if (prefix.charAt(0) === '/') {
-      prefix = path.join(this.root, prefix)
-    } else {
-      prefix = path.resolve(this.root, prefix)
-      if (trail)
-        prefix += '/'
-    }
-  }
-
-  if (process.platform === 'win32')
-    prefix = prefix.replace(/\\/g, '/')
-
-  // Mark this as a match
-  this._emitMatch(index, prefix)
-  cb()
-}
-
-// Returns either 'DIR', 'FILE', or false
-Glob.prototype._stat = function (f, cb) {
-  var abs = this._makeAbs(f)
-  var needDir = f.slice(-1) === '/'
-
-  if (f.length > this.maxLength)
-    return cb()
-
-  if (!this.stat && ownProp(this.cache, abs)) {
-    var c = this.cache[abs]
-
-    if (Array.isArray(c))
-      c = 'DIR'
-
-    // It exists, but maybe not how we need it
-    if (!needDir || c === 'DIR')
-      return cb(null, c)
-
-    if (needDir && c === 'FILE')
-      return cb()
-
-    // otherwise we have to stat, because maybe c=true
-    // if we know it exists, but not what it is.
-  }
-
-  var exists
-  var stat = this.statCache[abs]
-  if (stat !== undefined) {
-    if (stat === false)
-      return cb(null, stat)
-    else {
-      var type = stat.isDirectory() ? 'DIR' : 'FILE'
-      if (needDir && type === 'FILE')
-        return cb()
-      else
-        return cb(null, type, stat)
-    }
-  }
-
-  var self = this
-  var statcb = inflight('stat\0' + abs, lstatcb_)
-  if (statcb)
-    self.fs.lstat(abs, statcb)
-
-  function lstatcb_ (er, lstat) {
-    if (lstat && lstat.isSymbolicLink()) {
-      // If it's a symlink, then treat it as the target, unless
-      // the target does not exist, then treat it as a file.
-      return self.fs.stat(abs, function (er, stat) {
-        if (er)
-          self._stat2(f, abs, null, lstat, cb)
-        else
-          self._stat2(f, abs, er, stat, cb)
-      })
-    } else {
-      self._stat2(f, abs, er, lstat, cb)
-    }
-  }
-}
-
-Glob.prototype._stat2 = function (f, abs, er, stat, cb) {
-  if (er && (er.code === 'ENOENT' || er.code === 'ENOTDIR')) {
-    this.statCache[abs] = false
-    return cb()
-  }
-
-  var needDir = f.slice(-1) === '/'
-  this.statCache[abs] = stat
-
-  if (abs.slice(-1) === '/' && stat && !stat.isDirectory())
-    return cb(null, false, stat)
-
-  var c = true
-  if (stat)
-    c = stat.isDirectory() ? 'DIR' : 'FILE'
-  this.cache[abs] = this.cache[abs] || c
-
-  if (needDir && c === 'FILE')
-    return cb()
-
-  return cb(null, c, stat)
-}
-
-
-/***/ }),
-
-/***/ 4235:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-module.exports = globSync
-globSync.GlobSync = GlobSync
-
-var rp = __nccwpck_require__(6863)
-var minimatch = __nccwpck_require__(491)
-var Minimatch = minimatch.Minimatch
-var Glob = (__nccwpck_require__(9056).Glob)
-var util = __nccwpck_require__(3837)
-var path = __nccwpck_require__(1017)
-var assert = __nccwpck_require__(9491)
-var isAbsolute = __nccwpck_require__(8714)
-var common = __nccwpck_require__(2225)
-var setopts = common.setopts
-var ownProp = common.ownProp
-var childrenIgnored = common.childrenIgnored
-var isIgnored = common.isIgnored
-
-function globSync (pattern, options) {
-  if (typeof options === 'function' || arguments.length === 3)
-    throw new TypeError('callback provided to sync glob\n'+
-                        'See: https://github.com/isaacs/node-glob/issues/167')
-
-  return new GlobSync(pattern, options).found
-}
-
-function GlobSync (pattern, options) {
-  if (!pattern)
-    throw new Error('must provide pattern')
-
-  if (typeof options === 'function' || arguments.length === 3)
-    throw new TypeError('callback provided to sync glob\n'+
-                        'See: https://github.com/isaacs/node-glob/issues/167')
-
-  if (!(this instanceof GlobSync))
-    return new GlobSync(pattern, options)
-
-  setopts(this, pattern, options)
-
-  if (this.noprocess)
-    return this
-
-  var n = this.minimatch.set.length
-  this.matches = new Array(n)
-  for (var i = 0; i < n; i ++) {
-    this._process(this.minimatch.set[i], i, false)
-  }
-  this._finish()
-}
-
-GlobSync.prototype._finish = function () {
-  assert.ok(this instanceof GlobSync)
-  if (this.realpath) {
-    var self = this
-    this.matches.forEach(function (matchset, index) {
-      var set = self.matches[index] = Object.create(null)
-      for (var p in matchset) {
-        try {
-          p = self._makeAbs(p)
-          var real = rp.realpathSync(p, self.realpathCache)
-          set[real] = true
-        } catch (er) {
-          if (er.syscall === 'stat')
-            set[self._makeAbs(p)] = true
-          else
-            throw er
-        }
-      }
-    })
-  }
-  common.finish(this)
-}
-
-
-GlobSync.prototype._process = function (pattern, index, inGlobStar) {
-  assert.ok(this instanceof GlobSync)
-
-  // Get the first [n] parts of pattern that are all strings.
-  var n = 0
-  while (typeof pattern[n] === 'string') {
-    n ++
-  }
-  // now n is the index of the first one that is *not* a string.
-
-  // See if there's anything else
-  var prefix
-  switch (n) {
-    // if not, then this is rather simple
-    case pattern.length:
-      this._processSimple(pattern.join('/'), index)
-      return
-
-    case 0:
-      // pattern *starts* with some non-trivial item.
-      // going to readdir(cwd), but not include the prefix in matches.
-      prefix = null
-      break
-
-    default:
-      // pattern has some string bits in the front.
-      // whatever it starts with, whether that's 'absolute' like /foo/bar,
-      // or 'relative' like '../baz'
-      prefix = pattern.slice(0, n).join('/')
-      break
-  }
-
-  var remain = pattern.slice(n)
-
-  // get the list of entries.
-  var read
-  if (prefix === null)
-    read = '.'
-  else if (isAbsolute(prefix) ||
-      isAbsolute(pattern.map(function (p) {
-        return typeof p === 'string' ? p : '[*]'
-      }).join('/'))) {
-    if (!prefix || !isAbsolute(prefix))
-      prefix = '/' + prefix
-    read = prefix
-  } else
-    read = prefix
-
-  var abs = this._makeAbs(read)
-
-  //if ignored, skip processing
-  if (childrenIgnored(this, read))
-    return
-
-  var isGlobStar = remain[0] === minimatch.GLOBSTAR
-  if (isGlobStar)
-    this._processGlobStar(prefix, read, abs, remain, index, inGlobStar)
-  else
-    this._processReaddir(prefix, read, abs, remain, index, inGlobStar)
-}
-
-
-GlobSync.prototype._processReaddir = function (prefix, read, abs, remain, index, inGlobStar) {
-  var entries = this._readdir(abs, inGlobStar)
-
-  // if the abs isn't a dir, then nothing can match!
-  if (!entries)
-    return
-
-  // It will only match dot entries if it starts with a dot, or if
-  // dot is set.  Stuff like @(.foo|.bar) isn't allowed.
-  var pn = remain[0]
-  var negate = !!this.minimatch.negate
-  var rawGlob = pn._glob
-  var dotOk = this.dot || rawGlob.charAt(0) === '.'
-
-  var matchedEntries = []
-  for (var i = 0; i < entries.length; i++) {
-    var e = entries[i]
-    if (e.charAt(0) !== '.' || dotOk) {
-      var m
-      if (negate && !prefix) {
-        m = !e.match(pn)
-      } else {
-        m = e.match(pn)
-      }
-      if (m)
-        matchedEntries.push(e)
-    }
-  }
-
-  var len = matchedEntries.length
-  // If there are no matched entries, then nothing matches.
-  if (len === 0)
-    return
-
-  // if this is the last remaining pattern bit, then no need for
-  // an additional stat *unless* the user has specified mark or
-  // stat explicitly.  We know they exist, since readdir returned
-  // them.
-
-  if (remain.length === 1 && !this.mark && !this.stat) {
-    if (!this.matches[index])
-      this.matches[index] = Object.create(null)
-
-    for (var i = 0; i < len; i ++) {
-      var e = matchedEntries[i]
-      if (prefix) {
-        if (prefix.slice(-1) !== '/')
-          e = prefix + '/' + e
-        else
-          e = prefix + e
-      }
-
-      if (e.charAt(0) === '/' && !this.nomount) {
-        e = path.join(this.root, e)
-      }
-      this._emitMatch(index, e)
-    }
-    // This was the last one, and no stats were needed
-    return
-  }
-
-  // now test all matched entries as stand-ins for that part
-  // of the pattern.
-  remain.shift()
-  for (var i = 0; i < len; i ++) {
-    var e = matchedEntries[i]
-    var newPattern
-    if (prefix)
-      newPattern = [prefix, e]
-    else
-      newPattern = [e]
-    this._process(newPattern.concat(remain), index, inGlobStar)
-  }
-}
-
-
-GlobSync.prototype._emitMatch = function (index, e) {
-  if (isIgnored(this, e))
-    return
-
-  var abs = this._makeAbs(e)
-
-  if (this.mark)
-    e = this._mark(e)
-
-  if (this.absolute) {
-    e = abs
-  }
-
-  if (this.matches[index][e])
-    return
-
-  if (this.nodir) {
-    var c = this.cache[abs]
-    if (c === 'DIR' || Array.isArray(c))
-      return
-  }
-
-  this.matches[index][e] = true
-
-  if (this.stat)
-    this._stat(e)
-}
-
-
-GlobSync.prototype._readdirInGlobStar = function (abs) {
-  // follow all symlinked directories forever
-  // just proceed as if this is a non-globstar situation
-  if (this.follow)
-    return this._readdir(abs, false)
-
-  var entries
-  var lstat
-  var stat
-  try {
-    lstat = this.fs.lstatSync(abs)
-  } catch (er) {
-    if (er.code === 'ENOENT') {
-      // lstat failed, doesn't exist
-      return null
-    }
-  }
-
-  var isSym = lstat && lstat.isSymbolicLink()
-  this.symlinks[abs] = isSym
-
-  // If it's not a symlink or a dir, then it's definitely a regular file.
-  // don't bother doing a readdir in that case.
-  if (!isSym && lstat && !lstat.isDirectory())
-    this.cache[abs] = 'FILE'
-  else
-    entries = this._readdir(abs, false)
-
-  return entries
-}
-
-GlobSync.prototype._readdir = function (abs, inGlobStar) {
-  var entries
-
-  if (inGlobStar && !ownProp(this.symlinks, abs))
-    return this._readdirInGlobStar(abs)
-
-  if (ownProp(this.cache, abs)) {
-    var c = this.cache[abs]
-    if (!c || c === 'FILE')
-      return null
-
-    if (Array.isArray(c))
-      return c
-  }
-
-  try {
-    return this._readdirEntries(abs, this.fs.readdirSync(abs))
-  } catch (er) {
-    this._readdirError(abs, er)
-    return null
-  }
-}
-
-GlobSync.prototype._readdirEntries = function (abs, entries) {
-  // if we haven't asked to stat everything, then just
-  // assume that everything in there exists, so we can avoid
-  // having to stat it a second time.
-  if (!this.mark && !this.stat) {
-    for (var i = 0; i < entries.length; i ++) {
-      var e = entries[i]
-      if (abs === '/')
-        e = abs + e
-      else
-        e = abs + '/' + e
-      this.cache[e] = true
-    }
-  }
-
-  this.cache[abs] = entries
-
-  // mark and cache dir-ness
-  return entries
-}
-
-GlobSync.prototype._readdirError = function (f, er) {
-  // handle errors, and cache the information
-  switch (er.code) {
-    case 'ENOTSUP': // https://github.com/isaacs/node-glob/issues/205
-    case 'ENOTDIR': // totally normal. means it *does* exist.
-      var abs = this._makeAbs(f)
-      this.cache[abs] = 'FILE'
-      if (abs === this.cwdAbs) {
-        var error = new Error(er.code + ' invalid cwd ' + this.cwd)
-        error.path = this.cwd
-        error.code = er.code
-        throw error
-      }
-      break
-
-    case 'ENOENT': // not terribly unusual
-    case 'ELOOP':
-    case 'ENAMETOOLONG':
-    case 'UNKNOWN':
-      this.cache[this._makeAbs(f)] = false
-      break
-
-    default: // some unusual error.  Treat as failure.
-      this.cache[this._makeAbs(f)] = false
-      if (this.strict)
-        throw er
-      if (!this.silent)
-        console.error('glob error', er)
-      break
-  }
-}
-
-GlobSync.prototype._processGlobStar = function (prefix, read, abs, remain, index, inGlobStar) {
-
-  var entries = this._readdir(abs, inGlobStar)
-
-  // no entries means not a dir, so it can never have matches
-  // foo.txt/** doesn't match foo.txt
-  if (!entries)
-    return
-
-  // test without the globstar, and with every child both below
-  // and replacing the globstar.
-  var remainWithoutGlobStar = remain.slice(1)
-  var gspref = prefix ? [ prefix ] : []
-  var noGlobStar = gspref.concat(remainWithoutGlobStar)
-
-  // the noGlobStar pattern exits the inGlobStar state
-  this._process(noGlobStar, index, false)
-
-  var len = entries.length
-  var isSym = this.symlinks[abs]
-
-  // If it's a symlink, and we're in a globstar, then stop
-  if (isSym && inGlobStar)
-    return
-
-  for (var i = 0; i < len; i++) {
-    var e = entries[i]
-    if (e.charAt(0) === '.' && !this.dot)
-      continue
-
-    // these two cases enter the inGlobStar state
-    var instead = gspref.concat(entries[i], remainWithoutGlobStar)
-    this._process(instead, index, true)
-
-    var below = gspref.concat(entries[i], remain)
-    this._process(below, index, true)
-  }
-}
-
-GlobSync.prototype._processSimple = function (prefix, index) {
-  // XXX review this.  Shouldn't it be doing the mounting etc
-  // before doing stat?  kinda weird?
-  var exists = this._stat(prefix)
-
-  if (!this.matches[index])
-    this.matches[index] = Object.create(null)
-
-  // If it doesn't exist, then just mark the lack of results
-  if (!exists)
-    return
-
-  if (prefix && isAbsolute(prefix) && !this.nomount) {
-    var trail = /[\/\\]$/.test(prefix)
-    if (prefix.charAt(0) === '/') {
-      prefix = path.join(this.root, prefix)
-    } else {
-      prefix = path.resolve(this.root, prefix)
-      if (trail)
-        prefix += '/'
-    }
-  }
-
-  if (process.platform === 'win32')
-    prefix = prefix.replace(/\\/g, '/')
-
-  // Mark this as a match
-  this._emitMatch(index, prefix)
-}
-
-// Returns either 'DIR', 'FILE', or false
-GlobSync.prototype._stat = function (f) {
-  var abs = this._makeAbs(f)
-  var needDir = f.slice(-1) === '/'
-
-  if (f.length > this.maxLength)
-    return false
-
-  if (!this.stat && ownProp(this.cache, abs)) {
-    var c = this.cache[abs]
-
-    if (Array.isArray(c))
-      c = 'DIR'
-
-    // It exists, but maybe not how we need it
-    if (!needDir || c === 'DIR')
-      return c
-
-    if (needDir && c === 'FILE')
-      return false
-
-    // otherwise we have to stat, because maybe c=true
-    // if we know it exists, but not what it is.
-  }
-
-  var exists
-  var stat = this.statCache[abs]
-  if (!stat) {
-    var lstat
-    try {
-      lstat = this.fs.lstatSync(abs)
-    } catch (er) {
-      if (er && (er.code === 'ENOENT' || er.code === 'ENOTDIR')) {
-        this.statCache[abs] = false
-        return false
-      }
-    }
-
-    if (lstat && lstat.isSymbolicLink()) {
-      try {
-        stat = this.fs.statSync(abs)
-      } catch (er) {
-        stat = lstat
-      }
-    } else {
-      stat = lstat
-    }
-  }
-
-  this.statCache[abs] = stat
-
-  var c = true
-  if (stat)
-    c = stat.isDirectory() ? 'DIR' : 'FILE'
-
-  this.cache[abs] = this.cache[abs] || c
-
-  if (needDir && c === 'FILE')
-    return false
-
-  return c
-}
-
-GlobSync.prototype._mark = function (p) {
-  return common.mark(this, p)
-}
-
-GlobSync.prototype._makeAbs = function (f) {
-  return common.makeAbs(this, f)
-}
-
-
-/***/ }),
-
-/***/ 491:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-module.exports = minimatch
-minimatch.Minimatch = Minimatch
-
-var path = (function () { try { return __nccwpck_require__(1017) } catch (e) {}}()) || {
-  sep: '/'
-}
-minimatch.sep = path.sep
-
-var GLOBSTAR = minimatch.GLOBSTAR = Minimatch.GLOBSTAR = {}
-var expand = __nccwpck_require__(9094)
-
-var plTypes = {
-  '!': { open: '(?:(?!(?:', close: '))[^/]*?)'},
-  '?': { open: '(?:', close: ')?' },
-  '+': { open: '(?:', close: ')+' },
-  '*': { open: '(?:', close: ')*' },
-  '@': { open: '(?:', close: ')' }
-}
-
-// any single thing other than /
-// don't need to escape / when using new RegExp()
-var qmark = '[^/]'
-
-// * => any number of characters
-var star = qmark + '*?'
-
-// ** when dots are allowed.  Anything goes, except .. and .
-// not (^ or / followed by one or two dots followed by $ or /),
-// followed by anything, any number of times.
-var twoStarDot = '(?:(?!(?:\\\/|^)(?:\\.{1,2})($|\\\/)).)*?'
-
-// not a ^ or / followed by a dot,
-// followed by anything, any number of times.
-var twoStarNoDot = '(?:(?!(?:\\\/|^)\\.).)*?'
-
-// characters that need to be escaped in RegExp.
-var reSpecials = charSet('().*{}+?[]^$\\!')
-
-// "abc" -> { a:true, b:true, c:true }
-function charSet (s) {
-  return s.split('').reduce(function (set, c) {
-    set[c] = true
-    return set
-  }, {})
-}
-
-// normalizes slashes.
-var slashSplit = /\/+/
-
-minimatch.filter = filter
-function filter (pattern, options) {
-  options = options || {}
-  return function (p, i, list) {
-    return minimatch(p, pattern, options)
-  }
-}
-
-function ext (a, b) {
-  b = b || {}
-  var t = {}
-  Object.keys(a).forEach(function (k) {
-    t[k] = a[k]
-  })
-  Object.keys(b).forEach(function (k) {
-    t[k] = b[k]
-  })
-  return t
-}
-
-minimatch.defaults = function (def) {
-  if (!def || typeof def !== 'object' || !Object.keys(def).length) {
-    return minimatch
-  }
-
-  var orig = minimatch
-
-  var m = function minimatch (p, pattern, options) {
-    return orig(p, pattern, ext(def, options))
-  }
-
-  m.Minimatch = function Minimatch (pattern, options) {
-    return new orig.Minimatch(pattern, ext(def, options))
-  }
-  m.Minimatch.defaults = function defaults (options) {
-    return orig.defaults(ext(def, options)).Minimatch
-  }
-
-  m.filter = function filter (pattern, options) {
-    return orig.filter(pattern, ext(def, options))
-  }
-
-  m.defaults = function defaults (options) {
-    return orig.defaults(ext(def, options))
-  }
-
-  m.makeRe = function makeRe (pattern, options) {
-    return orig.makeRe(pattern, ext(def, options))
-  }
-
-  m.braceExpand = function braceExpand (pattern, options) {
-    return orig.braceExpand(pattern, ext(def, options))
-  }
-
-  m.match = function (list, pattern, options) {
-    return orig.match(list, pattern, ext(def, options))
-  }
-
-  return m
-}
-
-Minimatch.defaults = function (def) {
-  return minimatch.defaults(def).Minimatch
-}
-
-function minimatch (p, pattern, options) {
-  assertValidPattern(pattern)
-
-  if (!options) options = {}
-
-  // shortcut: comments match nothing.
-  if (!options.nocomment && pattern.charAt(0) === '#') {
-    return false
-  }
-
-  return new Minimatch(pattern, options).match(p)
-}
-
-function Minimatch (pattern, options) {
-  if (!(this instanceof Minimatch)) {
-    return new Minimatch(pattern, options)
-  }
-
-  assertValidPattern(pattern)
-
-  if (!options) options = {}
-
-  pattern = pattern.trim()
-
-  // windows support: need to use /, not \
-  if (!options.allowWindowsEscape && path.sep !== '/') {
-    pattern = pattern.split(path.sep).join('/')
-  }
-
-  this.options = options
-  this.set = []
-  this.pattern = pattern
-  this.regexp = null
-  this.negate = false
-  this.comment = false
-  this.empty = false
-  this.partial = !!options.partial
-
-  // make the set of regexps etc.
-  this.make()
-}
-
-Minimatch.prototype.debug = function () {}
-
-Minimatch.prototype.make = make
-function make () {
-  var pattern = this.pattern
-  var options = this.options
-
-  // empty patterns and comments match nothing.
-  if (!options.nocomment && pattern.charAt(0) === '#') {
-    this.comment = true
-    return
-  }
-  if (!pattern) {
-    this.empty = true
-    return
-  }
-
-  // step 1: figure out negation, etc.
-  this.parseNegate()
-
-  // step 2: expand braces
-  var set = this.globSet = this.braceExpand()
-
-  if (options.debug) this.debug = function debug() { console.error.apply(console, arguments) }
-
-  this.debug(this.pattern, set)
-
-  // step 3: now we have a set, so turn each one into a series of path-portion
-  // matching patterns.
-  // These will be regexps, except in the case of "**", which is
-  // set to the GLOBSTAR object for globstar behavior,
-  // and will not contain any / characters
-  set = this.globParts = set.map(function (s) {
-    return s.split(slashSplit)
-  })
-
-  this.debug(this.pattern, set)
-
-  // glob --> regexps
-  set = set.map(function (s, si, set) {
-    return s.map(this.parse, this)
-  }, this)
-
-  this.debug(this.pattern, set)
-
-  // filter out everything that didn't compile properly.
-  set = set.filter(function (s) {
-    return s.indexOf(false) === -1
-  })
-
-  this.debug(this.pattern, set)
-
-  this.set = set
-}
-
-Minimatch.prototype.parseNegate = parseNegate
-function parseNegate () {
-  var pattern = this.pattern
-  var negate = false
-  var options = this.options
-  var negateOffset = 0
-
-  if (options.nonegate) return
-
-  for (var i = 0, l = pattern.length
-    ; i < l && pattern.charAt(i) === '!'
-    ; i++) {
-    negate = !negate
-    negateOffset++
-  }
-
-  if (negateOffset) this.pattern = pattern.substr(negateOffset)
-  this.negate = negate
-}
-
-// Brace expansion:
-// a{b,c}d -> abd acd
-// a{b,}c -> abc ac
-// a{0..3}d -> a0d a1d a2d a3d
-// a{b,c{d,e}f}g -> abg acdfg acefg
-// a{b,c}d{e,f}g -> abdeg acdeg abdeg abdfg
-//
-// Invalid sets are not expanded.
-// a{2..}b -> a{2..}b
-// a{b}c -> a{b}c
-minimatch.braceExpand = function (pattern, options) {
-  return braceExpand(pattern, options)
-}
-
-Minimatch.prototype.braceExpand = braceExpand
-
-function braceExpand (pattern, options) {
-  if (!options) {
-    if (this instanceof Minimatch) {
-      options = this.options
-    } else {
-      options = {}
-    }
-  }
-
-  pattern = typeof pattern === 'undefined'
-    ? this.pattern : pattern
-
-  assertValidPattern(pattern)
-
-  // Thanks to Yeting Li <https://github.com/yetingli> for
-  // improving this regexp to avoid a ReDOS vulnerability.
-  if (options.nobrace || !/\{(?:(?!\{).)*\}/.test(pattern)) {
-    // shortcut. no need to expand.
-    return [pattern]
-  }
-
-  return expand(pattern)
-}
-
-var MAX_PATTERN_LENGTH = 1024 * 64
-var assertValidPattern = function (pattern) {
-  if (typeof pattern !== 'string') {
-    throw new TypeError('invalid pattern')
-  }
-
-  if (pattern.length > MAX_PATTERN_LENGTH) {
-    throw new TypeError('pattern is too long')
-  }
-}
-
-// parse a component of the expanded set.
-// At this point, no pattern may contain "/" in it
-// so we're going to return a 2d array, where each entry is the full
-// pattern, split on '/', and then turned into a regular expression.
-// A regexp is made at the end which joins each array with an
-// escaped /, and another full one which joins each regexp with |.
-//
-// Following the lead of Bash 4.1, note that "**" only has special meaning
-// when it is the *only* thing in a path portion.  Otherwise, any series
-// of * is equivalent to a single *.  Globstar behavior is enabled by
-// default, and can be disabled by setting options.noglobstar.
-Minimatch.prototype.parse = parse
-var SUBPARSE = {}
-function parse (pattern, isSub) {
-  assertValidPattern(pattern)
-
-  var options = this.options
-
-  // shortcuts
-  if (pattern === '**') {
-    if (!options.noglobstar)
-      return GLOBSTAR
-    else
-      pattern = '*'
-  }
-  if (pattern === '') return ''
-
-  var re = ''
-  var hasMagic = !!options.nocase
-  var escaping = false
-  // ? => one single character
-  var patternListStack = []
-  var negativeLists = []
-  var stateChar
-  var inClass = false
-  var reClassStart = -1
-  var classStart = -1
-  // . and .. never match anything that doesn't start with .,
-  // even when options.dot is set.
-  var patternStart = pattern.charAt(0) === '.' ? '' // anything
-  // not (start or / followed by . or .. followed by / or end)
-  : options.dot ? '(?!(?:^|\\\/)\\.{1,2}(?:$|\\\/))'
-  : '(?!\\.)'
-  var self = this
-
-  function clearStateChar () {
-    if (stateChar) {
-      // we had some state-tracking character
-      // that wasn't consumed by this pass.
-      switch (stateChar) {
-        case '*':
-          re += star
-          hasMagic = true
-        break
-        case '?':
-          re += qmark
-          hasMagic = true
-        break
-        default:
-          re += '\\' + stateChar
-        break
-      }
-      self.debug('clearStateChar %j %j', stateChar, re)
-      stateChar = false
-    }
-  }
-
-  for (var i = 0, len = pattern.length, c
-    ; (i < len) && (c = pattern.charAt(i))
-    ; i++) {
-    this.debug('%s\t%s %s %j', pattern, i, re, c)
-
-    // skip over any that are escaped.
-    if (escaping && reSpecials[c]) {
-      re += '\\' + c
-      escaping = false
-      continue
-    }
-
-    switch (c) {
-      /* istanbul ignore next */
-      case '/': {
-        // completely not allowed, even escaped.
-        // Should already be path-split by now.
-        return false
-      }
-
-      case '\\':
-        clearStateChar()
-        escaping = true
-      continue
-
-      // the various stateChar values
-      // for the "extglob" stuff.
-      case '?':
-      case '*':
-      case '+':
-      case '@':
-      case '!':
-        this.debug('%s\t%s %s %j <-- stateChar', pattern, i, re, c)
-
-        // all of those are literals inside a class, except that
-        // the glob [!a] means [^a] in regexp
-        if (inClass) {
-          this.debug('  in class')
-          if (c === '!' && i === classStart + 1) c = '^'
-          re += c
-          continue
-        }
-
-        // if we already have a stateChar, then it means
-        // that there was something like ** or +? in there.
-        // Handle the stateChar, then proceed with this one.
-        self.debug('call clearStateChar %j', stateChar)
-        clearStateChar()
-        stateChar = c
-        // if extglob is disabled, then +(asdf|foo) isn't a thing.
-        // just clear the statechar *now*, rather than even diving into
-        // the patternList stuff.
-        if (options.noext) clearStateChar()
-      continue
-
-      case '(':
-        if (inClass) {
-          re += '('
-          continue
-        }
-
-        if (!stateChar) {
-          re += '\\('
-          continue
-        }
-
-        patternListStack.push({
-          type: stateChar,
-          start: i - 1,
-          reStart: re.length,
-          open: plTypes[stateChar].open,
-          close: plTypes[stateChar].close
-        })
-        // negation is (?:(?!js)[^/]*)
-        re += stateChar === '!' ? '(?:(?!(?:' : '(?:'
-        this.debug('plType %j %j', stateChar, re)
-        stateChar = false
-      continue
-
-      case ')':
-        if (inClass || !patternListStack.length) {
-          re += '\\)'
-          continue
-        }
-
-        clearStateChar()
-        hasMagic = true
-        var pl = patternListStack.pop()
-        // negation is (?:(?!js)[^/]*)
-        // The others are (?:<pattern>)<type>
-        re += pl.close
-        if (pl.type === '!') {
-          negativeLists.push(pl)
-        }
-        pl.reEnd = re.length
-      continue
-
-      case '|':
-        if (inClass || !patternListStack.length || escaping) {
-          re += '\\|'
-          escaping = false
-          continue
-        }
-
-        clearStateChar()
-        re += '|'
-      continue
-
-      // these are mostly the same in regexp and glob
-      case '[':
-        // swallow any state-tracking char before the [
-        clearStateChar()
-
-        if (inClass) {
-          re += '\\' + c
-          continue
-        }
-
-        inClass = true
-        classStart = i
-        reClassStart = re.length
-        re += c
-      continue
-
-      case ']':
-        //  a right bracket shall lose its special
-        //  meaning and represent itself in
-        //  a bracket expression if it occurs
-        //  first in the list.  -- POSIX.2 2.8.3.2
-        if (i === classStart + 1 || !inClass) {
-          re += '\\' + c
-          escaping = false
-          continue
-        }
-
-        // handle the case where we left a class open.
-        // "[z-a]" is valid, equivalent to "\[z-a\]"
-        // split where the last [ was, make sure we don't have
-        // an invalid re. if so, re-walk the contents of the
-        // would-be class to re-translate any characters that
-        // were passed through as-is
-        // TODO: It would probably be faster to determine this
-        // without a try/catch and a new RegExp, but it's tricky
-        // to do safely.  For now, this is safe and works.
-        var cs = pattern.substring(classStart + 1, i)
-        try {
-          RegExp('[' + cs + ']')
-        } catch (er) {
-          // not a valid class!
-          var sp = this.parse(cs, SUBPARSE)
-          re = re.substr(0, reClassStart) + '\\[' + sp[0] + '\\]'
-          hasMagic = hasMagic || sp[1]
-          inClass = false
-          continue
-        }
-
-        // finish up the class.
-        hasMagic = true
-        inClass = false
-        re += c
-      continue
-
-      default:
-        // swallow any state char that wasn't consumed
-        clearStateChar()
-
-        if (escaping) {
-          // no need
-          escaping = false
-        } else if (reSpecials[c]
-          && !(c === '^' && inClass)) {
-          re += '\\'
-        }
-
-        re += c
-
-    } // switch
-  } // for
-
-  // handle the case where we left a class open.
-  // "[abc" is valid, equivalent to "\[abc"
-  if (inClass) {
-    // split where the last [ was, and escape it
-    // this is a huge pita.  We now have to re-walk
-    // the contents of the would-be class to re-translate
-    // any characters that were passed through as-is
-    cs = pattern.substr(classStart + 1)
-    sp = this.parse(cs, SUBPARSE)
-    re = re.substr(0, reClassStart) + '\\[' + sp[0]
-    hasMagic = hasMagic || sp[1]
-  }
-
-  // handle the case where we had a +( thing at the *end*
-  // of the pattern.
-  // each pattern list stack adds 3 chars, and we need to go through
-  // and escape any | chars that were passed through as-is for the regexp.
-  // Go through and escape them, taking care not to double-escape any
-  // | chars that were already escaped.
-  for (pl = patternListStack.pop(); pl; pl = patternListStack.pop()) {
-    var tail = re.slice(pl.reStart + pl.open.length)
-    this.debug('setting tail', re, pl)
-    // maybe some even number of \, then maybe 1 \, followed by a |
-    tail = tail.replace(/((?:\\{2}){0,64})(\\?)\|/g, function (_, $1, $2) {
-      if (!$2) {
-        // the | isn't already escaped, so escape it.
-        $2 = '\\'
-      }
-
-      // need to escape all those slashes *again*, without escaping the
-      // one that we need for escaping the | character.  As it works out,
-      // escaping an even number of slashes can be done by simply repeating
-      // it exactly after itself.  That's why this trick works.
-      //
-      // I am sorry that you have to see this.
-      return $1 + $1 + $2 + '|'
-    })
-
-    this.debug('tail=%j\n   %s', tail, tail, pl, re)
-    var t = pl.type === '*' ? star
-      : pl.type === '?' ? qmark
-      : '\\' + pl.type
-
-    hasMagic = true
-    re = re.slice(0, pl.reStart) + t + '\\(' + tail
-  }
-
-  // handle trailing things that only matter at the very end.
-  clearStateChar()
-  if (escaping) {
-    // trailing \\
-    re += '\\\\'
-  }
-
-  // only need to apply the nodot start if the re starts with
-  // something that could conceivably capture a dot
-  var addPatternStart = false
-  switch (re.charAt(0)) {
-    case '[': case '.': case '(': addPatternStart = true
-  }
-
-  // Hack to work around lack of negative lookbehind in JS
-  // A pattern like: *.!(x).!(y|z) needs to ensure that a name
-  // like 'a.xyz.yz' doesn't match.  So, the first negative
-  // lookahead, has to look ALL the way ahead, to the end of
-  // the pattern.
-  for (var n = negativeLists.length - 1; n > -1; n--) {
-    var nl = negativeLists[n]
-
-    var nlBefore = re.slice(0, nl.reStart)
-    var nlFirst = re.slice(nl.reStart, nl.reEnd - 8)
-    var nlLast = re.slice(nl.reEnd - 8, nl.reEnd)
-    var nlAfter = re.slice(nl.reEnd)
-
-    nlLast += nlAfter
-
-    // Handle nested stuff like *(*.js|!(*.json)), where open parens
-    // mean that we should *not* include the ) in the bit that is considered
-    // "after" the negated section.
-    var openParensBefore = nlBefore.split('(').length - 1
-    var cleanAfter = nlAfter
-    for (i = 0; i < openParensBefore; i++) {
-      cleanAfter = cleanAfter.replace(/\)[+*?]?/, '')
-    }
-    nlAfter = cleanAfter
-
-    var dollar = ''
-    if (nlAfter === '' && isSub !== SUBPARSE) {
-      dollar = '$'
-    }
-    var newRe = nlBefore + nlFirst + nlAfter + dollar + nlLast
-    re = newRe
-  }
-
-  // if the re is not "" at this point, then we need to make sure
-  // it doesn't match against an empty path part.
-  // Otherwise a/* will match a/, which it should not.
-  if (re !== '' && hasMagic) {
-    re = '(?=.)' + re
-  }
-
-  if (addPatternStart) {
-    re = patternStart + re
-  }
-
-  // parsing just a piece of a larger pattern.
-  if (isSub === SUBPARSE) {
-    return [re, hasMagic]
-  }
-
-  // skip the regexp for non-magical patterns
-  // unescape anything in it, though, so that it'll be
-  // an exact match against a file etc.
-  if (!hasMagic) {
-    return globUnescape(pattern)
-  }
-
-  var flags = options.nocase ? 'i' : ''
-  try {
-    var regExp = new RegExp('^' + re + '$', flags)
-  } catch (er) /* istanbul ignore next - should be impossible */ {
-    // If it was an invalid regular expression, then it can't match
-    // anything.  This trick looks for a character after the end of
-    // the string, which is of course impossible, except in multi-line
-    // mode, but it's not a /m regex.
-    return new RegExp('$.')
-  }
-
-  regExp._glob = pattern
-  regExp._src = re
-
-  return regExp
-}
-
-minimatch.makeRe = function (pattern, options) {
-  return new Minimatch(pattern, options || {}).makeRe()
-}
-
-Minimatch.prototype.makeRe = makeRe
-function makeRe () {
-  if (this.regexp || this.regexp === false) return this.regexp
-
-  // at this point, this.set is a 2d array of partial
-  // pattern strings, or "**".
-  //
-  // It's better to use .match().  This function shouldn't
-  // be used, really, but it's pretty convenient sometimes,
-  // when you just want to work with a regex.
-  var set = this.set
-
-  if (!set.length) {
-    this.regexp = false
-    return this.regexp
-  }
-  var options = this.options
-
-  var twoStar = options.noglobstar ? star
-    : options.dot ? twoStarDot
-    : twoStarNoDot
-  var flags = options.nocase ? 'i' : ''
-
-  var re = set.map(function (pattern) {
-    return pattern.map(function (p) {
-      return (p === GLOBSTAR) ? twoStar
-      : (typeof p === 'string') ? regExpEscape(p)
-      : p._src
-    }).join('\\\/')
-  }).join('|')
-
-  // must match entire pattern
-  // ending in a * or ** will make it less strict.
-  re = '^(?:' + re + ')$'
-
-  // can match anything, as long as it's not this.
-  if (this.negate) re = '^(?!' + re + ').*$'
-
-  try {
-    this.regexp = new RegExp(re, flags)
-  } catch (ex) /* istanbul ignore next - should be impossible */ {
-    this.regexp = false
-  }
-  return this.regexp
-}
-
-minimatch.match = function (list, pattern, options) {
-  options = options || {}
-  var mm = new Minimatch(pattern, options)
-  list = list.filter(function (f) {
-    return mm.match(f)
-  })
-  if (mm.options.nonull && !list.length) {
-    list.push(pattern)
-  }
-  return list
-}
-
-Minimatch.prototype.match = function match (f, partial) {
-  if (typeof partial === 'undefined') partial = this.partial
-  this.debug('match', f, this.pattern)
-  // short-circuit in the case of busted things.
-  // comments, etc.
-  if (this.comment) return false
-  if (this.empty) return f === ''
-
-  if (f === '/' && partial) return true
-
-  var options = this.options
-
-  // windows: need to use /, not \
-  if (path.sep !== '/') {
-    f = f.split(path.sep).join('/')
-  }
-
-  // treat the test path as a set of pathparts.
-  f = f.split(slashSplit)
-  this.debug(this.pattern, 'split', f)
-
-  // just ONE of the pattern sets in this.set needs to match
-  // in order for it to be valid.  If negating, then just one
-  // match means that we have failed.
-  // Either way, return on the first hit.
-
-  var set = this.set
-  this.debug(this.pattern, 'set', set)
-
-  // Find the basename of the path by looking for the last non-empty segment
-  var filename
-  var i
-  for (i = f.length - 1; i >= 0; i--) {
-    filename = f[i]
-    if (filename) break
-  }
-
-  for (i = 0; i < set.length; i++) {
-    var pattern = set[i]
-    var file = f
-    if (options.matchBase && pattern.length === 1) {
-      file = [filename]
-    }
-    var hit = this.matchOne(file, pattern, partial)
-    if (hit) {
-      if (options.flipNegate) return true
-      return !this.negate
-    }
-  }
-
-  // didn't get any hits.  this is success if it's a negative
-  // pattern, failure otherwise.
-  if (options.flipNegate) return false
-  return this.negate
-}
-
-// set partial to true to test if, for example,
-// "/a/b" matches the start of "/*/b/*/d"
-// Partial means, if you run out of file before you run
-// out of pattern, then that's fine, as long as all
-// the parts match.
-Minimatch.prototype.matchOne = function (file, pattern, partial) {
-  var options = this.options
-
-  this.debug('matchOne',
-    { 'this': this, file: file, pattern: pattern })
-
-  this.debug('matchOne', file.length, pattern.length)
-
-  for (var fi = 0,
-      pi = 0,
-      fl = file.length,
-      pl = pattern.length
-      ; (fi < fl) && (pi < pl)
-      ; fi++, pi++) {
-    this.debug('matchOne loop')
-    var p = pattern[pi]
-    var f = file[fi]
-
-    this.debug(pattern, p, f)
-
-    // should be impossible.
-    // some invalid regexp stuff in the set.
-    /* istanbul ignore if */
-    if (p === false) return false
-
-    if (p === GLOBSTAR) {
-      this.debug('GLOBSTAR', [pattern, p, f])
-
-      // "**"
-      // a/**/b/**/c would match the following:
-      // a/b/x/y/z/c
-      // a/x/y/z/b/c
-      // a/b/x/b/x/c
-      // a/b/c
-      // To do this, take the rest of the pattern after
-      // the **, and see if it would match the file remainder.
-      // If so, return success.
-      // If not, the ** "swallows" a segment, and try again.
-      // This is recursively awful.
-      //
-      // a/**/b/**/c matching a/b/x/y/z/c
-      // - a matches a
-      // - doublestar
-      //   - matchOne(b/x/y/z/c, b/**/c)
-      //     - b matches b
-      //     - doublestar
-      //       - matchOne(x/y/z/c, c) -> no
-      //       - matchOne(y/z/c, c) -> no
-      //       - matchOne(z/c, c) -> no
-      //       - matchOne(c, c) yes, hit
-      var fr = fi
-      var pr = pi + 1
-      if (pr === pl) {
-        this.debug('** at the end')
-        // a ** at the end will just swallow the rest.
-        // We have found a match.
-        // however, it will not swallow /.x, unless
-        // options.dot is set.
-        // . and .. are *never* matched by **, for explosively
-        // exponential reasons.
-        for (; fi < fl; fi++) {
-          if (file[fi] === '.' || file[fi] === '..' ||
-            (!options.dot && file[fi].charAt(0) === '.')) return false
-        }
-        return true
-      }
-
-      // ok, let's see if we can swallow whatever we can.
-      while (fr < fl) {
-        var swallowee = file[fr]
-
-        this.debug('\nglobstar while', file, fr, pattern, pr, swallowee)
-
-        // XXX remove this slice.  Just pass the start index.
-        if (this.matchOne(file.slice(fr), pattern.slice(pr), partial)) {
-          this.debug('globstar found match!', fr, fl, swallowee)
-          // found a match.
-          return true
-        } else {
-          // can't swallow "." or ".." ever.
-          // can only swallow ".foo" when explicitly asked.
-          if (swallowee === '.' || swallowee === '..' ||
-            (!options.dot && swallowee.charAt(0) === '.')) {
-            this.debug('dot detected!', file, fr, pattern, pr)
-            break
-          }
-
-          // ** swallows a segment, and continue.
-          this.debug('globstar swallow a segment, and continue')
-          fr++
-        }
-      }
-
-      // no match was found.
-      // However, in partial mode, we can't say this is necessarily over.
-      // If there's more *pattern* left, then
-      /* istanbul ignore if */
-      if (partial) {
-        // ran out of file
-        this.debug('\n>>> no match, partial?', file, fr, pattern, pr)
-        if (fr === fl) return true
-      }
-      return false
-    }
-
-    // something other than **
-    // non-magic patterns just have to match exactly
-    // patterns with magic have been turned into regexps.
-    var hit
-    if (typeof p === 'string') {
-      hit = f === p
-      this.debug('string match', p, f, hit)
-    } else {
-      hit = f.match(p)
-      this.debug('pattern match', p, f, hit)
-    }
-
-    if (!hit) return false
-  }
-
-  // Note: ending in / means that we'll get a final ""
-  // at the end of the pattern.  This can only match a
-  // corresponding "" at the end of the file.
-  // If the file ends in /, then it can only match a
-  // a pattern that ends in /, unless the pattern just
-  // doesn't have any more for it. But, a/b/ should *not*
-  // match "a/b/*", even though "" matches against the
-  // [^/]*? pattern, except in partial mode, where it might
-  // simply not be reached yet.
-  // However, a/b/ should still satisfy a/*
-
-  // now either we fell off the end of the pattern, or we're done.
-  if (fi === fl && pi === pl) {
-    // ran out of pattern and filename at the same time.
-    // an exact hit!
-    return true
-  } else if (fi === fl) {
-    // ran out of file, but still had pattern left.
-    // this is ok if we're doing the match as part of
-    // a glob fs traversal.
-    return partial
-  } else /* istanbul ignore else */ if (pi === pl) {
-    // ran out of pattern, still have file left.
-    // this is only acceptable if we're on the very last
-    // empty segment of a file with a trailing slash.
-    // a/* should match a/b/
-    return (fi === fl - 1) && (file[fi] === '')
-  }
-
-  // should be unreachable.
-  /* istanbul ignore next */
-  throw new Error('wtf?')
-}
-
-// replace stuff like \* with *
-function globUnescape (s) {
-  return s.replace(/\\(.)/g, '$1')
-}
-
-function regExpEscape (s) {
-  return s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
-}
-
-
-/***/ }),
-
-/***/ 2371:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const assert = __nccwpck_require__(9491)
-const path = __nccwpck_require__(1017)
-const fs = __nccwpck_require__(7147)
-let glob = undefined
-try {
-  glob = __nccwpck_require__(9056)
-} catch (_err) {
-  // treat glob as optional.
-}
-
-const defaultGlobOpts = {
-  nosort: true,
-  silent: true
-}
-
-// for EMFILE handling
-let timeout = 0
-
-const isWindows = (process.platform === "win32")
-
-const defaults = options => {
-  const methods = [
-    'unlink',
-    'chmod',
-    'stat',
-    'lstat',
-    'rmdir',
-    'readdir'
-  ]
-  methods.forEach(m => {
-    options[m] = options[m] || fs[m]
-    m = m + 'Sync'
-    options[m] = options[m] || fs[m]
-  })
-
-  options.maxBusyTries = options.maxBusyTries || 3
-  options.emfileWait = options.emfileWait || 1000
-  if (options.glob === false) {
-    options.disableGlob = true
-  }
-  if (options.disableGlob !== true && glob === undefined) {
-    throw Error('glob dependency not found, set `options.disableGlob = true` if intentional')
-  }
-  options.disableGlob = options.disableGlob || false
-  options.glob = options.glob || defaultGlobOpts
-}
-
-const rimraf = (p, options, cb) => {
-  if (typeof options === 'function') {
-    cb = options
-    options = {}
-  }
-
-  assert(p, 'rimraf: missing path')
-  assert.equal(typeof p, 'string', 'rimraf: path should be a string')
-  assert.equal(typeof cb, 'function', 'rimraf: callback function required')
-  assert(options, 'rimraf: invalid options argument provided')
-  assert.equal(typeof options, 'object', 'rimraf: options should be object')
-
-  defaults(options)
-
-  let busyTries = 0
-  let errState = null
-  let n = 0
-
-  const next = (er) => {
-    errState = errState || er
-    if (--n === 0)
-      cb(errState)
-  }
-
-  const afterGlob = (er, results) => {
-    if (er)
-      return cb(er)
-
-    n = results.length
-    if (n === 0)
-      return cb()
-
-    results.forEach(p => {
-      const CB = (er) => {
-        if (er) {
-          if ((er.code === "EBUSY" || er.code === "ENOTEMPTY" || er.code === "EPERM") &&
-              busyTries < options.maxBusyTries) {
-            busyTries ++
-            // try again, with the same exact callback as this one.
-            return setTimeout(() => rimraf_(p, options, CB), busyTries * 100)
-          }
-
-          // this one won't happen if graceful-fs is used.
-          if (er.code === "EMFILE" && timeout < options.emfileWait) {
-            return setTimeout(() => rimraf_(p, options, CB), timeout ++)
-          }
-
-          // already gone
-          if (er.code === "ENOENT") er = null
-        }
-
-        timeout = 0
-        next(er)
-      }
-      rimraf_(p, options, CB)
-    })
-  }
-
-  if (options.disableGlob || !glob.hasMagic(p))
-    return afterGlob(null, [p])
-
-  options.lstat(p, (er, stat) => {
-    if (!er)
-      return afterGlob(null, [p])
-
-    glob(p, options.glob, afterGlob)
-  })
-
-}
-
-// Two possible strategies.
-// 1. Assume it's a file.  unlink it, then do the dir stuff on EPERM or EISDIR
-// 2. Assume it's a directory.  readdir, then do the file stuff on ENOTDIR
-//
-// Both result in an extra syscall when you guess wrong.  However, there
-// are likely far more normal files in the world than directories.  This
-// is based on the assumption that a the average number of files per
-// directory is >= 1.
-//
-// If anyone ever complains about this, then I guess the strategy could
-// be made configurable somehow.  But until then, YAGNI.
-const rimraf_ = (p, options, cb) => {
-  assert(p)
-  assert(options)
-  assert(typeof cb === 'function')
-
-  // sunos lets the root user unlink directories, which is... weird.
-  // so we have to lstat here and make sure it's not a dir.
-  options.lstat(p, (er, st) => {
-    if (er && er.code === "ENOENT")
-      return cb(null)
-
-    // Windows can EPERM on stat.  Life is suffering.
-    if (er && er.code === "EPERM" && isWindows)
-      fixWinEPERM(p, options, er, cb)
-
-    if (st && st.isDirectory())
-      return rmdir(p, options, er, cb)
-
-    options.unlink(p, er => {
-      if (er) {
-        if (er.code === "ENOENT")
-          return cb(null)
-        if (er.code === "EPERM")
-          return (isWindows)
-            ? fixWinEPERM(p, options, er, cb)
-            : rmdir(p, options, er, cb)
-        if (er.code === "EISDIR")
-          return rmdir(p, options, er, cb)
-      }
-      return cb(er)
-    })
-  })
-}
-
-const fixWinEPERM = (p, options, er, cb) => {
-  assert(p)
-  assert(options)
-  assert(typeof cb === 'function')
-
-  options.chmod(p, 0o666, er2 => {
-    if (er2)
-      cb(er2.code === "ENOENT" ? null : er)
-    else
-      options.stat(p, (er3, stats) => {
-        if (er3)
-          cb(er3.code === "ENOENT" ? null : er)
-        else if (stats.isDirectory())
-          rmdir(p, options, er, cb)
-        else
-          options.unlink(p, cb)
-      })
-  })
-}
-
-const fixWinEPERMSync = (p, options, er) => {
-  assert(p)
-  assert(options)
-
-  try {
-    options.chmodSync(p, 0o666)
-  } catch (er2) {
-    if (er2.code === "ENOENT")
-      return
-    else
-      throw er
-  }
-
-  let stats
-  try {
-    stats = options.statSync(p)
-  } catch (er3) {
-    if (er3.code === "ENOENT")
-      return
-    else
-      throw er
-  }
-
-  if (stats.isDirectory())
-    rmdirSync(p, options, er)
-  else
-    options.unlinkSync(p)
-}
-
-const rmdir = (p, options, originalEr, cb) => {
-  assert(p)
-  assert(options)
-  assert(typeof cb === 'function')
-
-  // try to rmdir first, and only readdir on ENOTEMPTY or EEXIST (SunOS)
-  // if we guessed wrong, and it's not a directory, then
-  // raise the original error.
-  options.rmdir(p, er => {
-    if (er && (er.code === "ENOTEMPTY" || er.code === "EEXIST" || er.code === "EPERM"))
-      rmkids(p, options, cb)
-    else if (er && er.code === "ENOTDIR")
-      cb(originalEr)
-    else
-      cb(er)
-  })
-}
-
-const rmkids = (p, options, cb) => {
-  assert(p)
-  assert(options)
-  assert(typeof cb === 'function')
-
-  options.readdir(p, (er, files) => {
-    if (er)
-      return cb(er)
-    let n = files.length
-    if (n === 0)
-      return options.rmdir(p, cb)
-    let errState
-    files.forEach(f => {
-      rimraf(path.join(p, f), options, er => {
-        if (errState)
-          return
-        if (er)
-          return cb(errState = er)
-        if (--n === 0)
-          options.rmdir(p, cb)
-      })
-    })
-  })
-}
-
-// this looks simpler, and is strictly *faster*, but will
-// tie up the JavaScript thread and fail on excessively
-// deep directory trees.
-const rimrafSync = (p, options) => {
-  options = options || {}
-  defaults(options)
-
-  assert(p, 'rimraf: missing path')
-  assert.equal(typeof p, 'string', 'rimraf: path should be a string')
-  assert(options, 'rimraf: missing options')
-  assert.equal(typeof options, 'object', 'rimraf: options should be object')
-
-  let results
-
-  if (options.disableGlob || !glob.hasMagic(p)) {
-    results = [p]
-  } else {
-    try {
-      options.lstatSync(p)
-      results = [p]
-    } catch (er) {
-      results = glob.sync(p, options.glob)
-    }
-  }
-
-  if (!results.length)
-    return
-
-  for (let i = 0; i < results.length; i++) {
-    const p = results[i]
-
-    let st
-    try {
-      st = options.lstatSync(p)
-    } catch (er) {
-      if (er.code === "ENOENT")
-        return
-
-      // Windows can EPERM on stat.  Life is suffering.
-      if (er.code === "EPERM" && isWindows)
-        fixWinEPERMSync(p, options, er)
-    }
-
-    try {
-      // sunos lets the root user unlink directories, which is... weird.
-      if (st && st.isDirectory())
-        rmdirSync(p, options, null)
-      else
-        options.unlinkSync(p)
-    } catch (er) {
-      if (er.code === "ENOENT")
-        return
-      if (er.code === "EPERM")
-        return isWindows ? fixWinEPERMSync(p, options, er) : rmdirSync(p, options, er)
-      if (er.code !== "EISDIR")
-        throw er
-
-      rmdirSync(p, options, er)
-    }
-  }
-}
-
-const rmdirSync = (p, options, originalEr) => {
-  assert(p)
-  assert(options)
-
-  try {
-    options.rmdirSync(p)
-  } catch (er) {
-    if (er.code === "ENOENT")
-      return
-    if (er.code === "ENOTDIR")
-      throw originalEr
-    if (er.code === "ENOTEMPTY" || er.code === "EEXIST" || er.code === "EPERM")
-      rmkidsSync(p, options)
-  }
-}
-
-const rmkidsSync = (p, options) => {
-  assert(p)
-  assert(options)
-  options.readdirSync(p).forEach(f => rimrafSync(path.join(p, f), options))
-
-  // We only end up here once we got ENOTEMPTY at least once, and
-  // at this point, we are guaranteed to have removed all the kids.
-  // So, we know that it won't be ENOENT or ENOTDIR or anything else.
-  // try really hard to delete stuff on windows, because it has a
-  // PROFOUNDLY annoying habit of not closing handles promptly when
-  // files are deleted, resulting in spurious ENOTEMPTY errors.
-  const retries = isWindows ? 100 : 1
-  let i = 0
-  do {
-    let threw = true
-    try {
-      const ret = options.rmdirSync(p, options)
-      threw = false
-      return ret
-    } finally {
-      if (++i < retries && threw)
-        continue
-    }
-  } while (true)
-}
-
-module.exports = rimraf
-rimraf.sync = rimrafSync
 
 
 /***/ }),
@@ -22410,6 +18734,21 @@ function version(uuid) {
 
 var _default = version;
 exports["default"] = _default;
+
+/***/ }),
+
+/***/ 5650:
+/***/ (function(__unused_webpack_module, exports) {
+
+/**
+ * @license
+ * web-streams-polyfill v4.0.0-beta.3
+ * Copyright 2021 Mattias Buelens, Diwank Singh Tomer and other contributors.
+ * This code is released under the MIT license.
+ * SPDX-License-Identifier: MIT
+ */
+!function(e,t){ true?t(exports):0}(this,(function(e){"use strict";const t="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?Symbol:e=>`Symbol(${e})`;function r(){}function o(e){return"object"==typeof e&&null!==e||"function"==typeof e}const n=r;function a(e,t){try{Object.defineProperty(e,"name",{value:t,configurable:!0})}catch(e){}}const i=Promise,l=Promise.prototype.then,s=Promise.resolve.bind(i),u=Promise.reject.bind(i);function c(e){return new i(e)}function d(e){return s(e)}function f(e){return u(e)}function b(e,t,r){return l.call(e,t,r)}function h(e,t,r){b(b(e,t,r),void 0,n)}function _(e,t){h(e,t)}function p(e,t){h(e,void 0,t)}function m(e,t,r){return b(e,t,r)}function y(e){b(e,void 0,n)}let g=e=>{if("function"==typeof queueMicrotask)g=queueMicrotask;else{const e=d(void 0);g=t=>b(e,t)}return g(e)};function S(e,t,r){if("function"!=typeof e)throw new TypeError("Argument is not a function");return Function.prototype.apply.call(e,t,r)}function w(e,t,r){try{return d(S(e,t,r))}catch(e){return f(e)}}class v{constructor(){this._cursor=0,this._size=0,this._front={_elements:[],_next:void 0},this._back=this._front,this._cursor=0,this._size=0}get length(){return this._size}push(e){const t=this._back;let r=t;16383===t._elements.length&&(r={_elements:[],_next:void 0}),t._elements.push(e),r!==t&&(this._back=r,t._next=r),++this._size}shift(){const e=this._front;let t=e;const r=this._cursor;let o=r+1;const n=e._elements,a=n[r];return 16384===o&&(t=e._next,o=0),--this._size,this._cursor=o,e!==t&&(this._front=t),n[r]=void 0,a}forEach(e){let t=this._cursor,r=this._front,o=r._elements;for(;!(t===o.length&&void 0===r._next||t===o.length&&(r=r._next,o=r._elements,t=0,0===o.length));)e(o[t]),++t}peek(){const e=this._front,t=this._cursor;return e._elements[t]}}const R=t("[[AbortSteps]]"),T=t("[[ErrorSteps]]"),q=t("[[CancelSteps]]"),C=t("[[PullSteps]]"),P=t("[[ReleaseSteps]]");function E(e,t){e._ownerReadableStream=t,t._reader=e,"readable"===t._state?B(e):"closed"===t._state?function(e){B(e),z(e)}(e):A(e,t._storedError)}function W(e,t){return Xt(e._ownerReadableStream,t)}function O(e){const t=e._ownerReadableStream;"readable"===t._state?j(e,new TypeError("Reader was released and can no longer be used to monitor the stream's closedness")):function(e,t){A(e,t)}(e,new TypeError("Reader was released and can no longer be used to monitor the stream's closedness")),t._readableStreamController[P](),t._reader=void 0,e._ownerReadableStream=void 0}function k(e){return new TypeError("Cannot "+e+" a stream using a released reader")}function B(e){e._closedPromise=c(((t,r)=>{e._closedPromise_resolve=t,e._closedPromise_reject=r}))}function A(e,t){B(e),j(e,t)}function j(e,t){void 0!==e._closedPromise_reject&&(y(e._closedPromise),e._closedPromise_reject(t),e._closedPromise_resolve=void 0,e._closedPromise_reject=void 0)}function z(e){void 0!==e._closedPromise_resolve&&(e._closedPromise_resolve(void 0),e._closedPromise_resolve=void 0,e._closedPromise_reject=void 0)}const L=Number.isFinite||function(e){return"number"==typeof e&&isFinite(e)},F=Math.trunc||function(e){return e<0?Math.ceil(e):Math.floor(e)};function D(e,t){if(void 0!==e&&("object"!=typeof(r=e)&&"function"!=typeof r))throw new TypeError(`${t} is not an object.`);var r}function I(e,t){if("function"!=typeof e)throw new TypeError(`${t} is not a function.`)}function $(e,t){if(!function(e){return"object"==typeof e&&null!==e||"function"==typeof e}(e))throw new TypeError(`${t} is not an object.`)}function M(e,t,r){if(void 0===e)throw new TypeError(`Parameter ${t} is required in '${r}'.`)}function Y(e,t,r){if(void 0===e)throw new TypeError(`${t} is required in '${r}'.`)}function Q(e){return Number(e)}function N(e){return 0===e?0:e}function x(e,t){const r=Number.MAX_SAFE_INTEGER;let o=Number(e);if(o=N(o),!L(o))throw new TypeError(`${t} is not a finite number`);if(o=function(e){return N(F(e))}(o),o<0||o>r)throw new TypeError(`${t} is outside the accepted range of 0 to ${r}, inclusive`);return L(o)&&0!==o?o:0}function H(e){if(!o(e))return!1;if("function"!=typeof e.getReader)return!1;try{return"boolean"==typeof e.locked}catch(e){return!1}}function V(e){if(!o(e))return!1;if("function"!=typeof e.getWriter)return!1;try{return"boolean"==typeof e.locked}catch(e){return!1}}function U(e,t){if(!Ut(e))throw new TypeError(`${t} is not a ReadableStream.`)}function G(e,t){e._reader._readRequests.push(t)}function X(e,t,r){const o=e._reader._readRequests.shift();r?o._closeSteps():o._chunkSteps(t)}function J(e){return e._reader._readRequests.length}function K(e){const t=e._reader;return void 0!==t&&!!Z(t)}class ReadableStreamDefaultReader{constructor(e){if(M(e,1,"ReadableStreamDefaultReader"),U(e,"First parameter"),Gt(e))throw new TypeError("This stream has already been locked for exclusive reading by another reader");E(this,e),this._readRequests=new v}get closed(){return Z(this)?this._closedPromise:f(te("closed"))}cancel(e){return Z(this)?void 0===this._ownerReadableStream?f(k("cancel")):W(this,e):f(te("cancel"))}read(){if(!Z(this))return f(te("read"));if(void 0===this._ownerReadableStream)return f(k("read from"));let e,t;const r=c(((r,o)=>{e=r,t=o}));return function(e,t){const r=e._ownerReadableStream;r._disturbed=!0,"closed"===r._state?t._closeSteps():"errored"===r._state?t._errorSteps(r._storedError):r._readableStreamController[C](t)}(this,{_chunkSteps:t=>e({value:t,done:!1}),_closeSteps:()=>e({value:void 0,done:!0}),_errorSteps:e=>t(e)}),r}releaseLock(){if(!Z(this))throw te("releaseLock");void 0!==this._ownerReadableStream&&function(e){O(e);const t=new TypeError("Reader was released");ee(e,t)}(this)}}function Z(e){return!!o(e)&&(!!Object.prototype.hasOwnProperty.call(e,"_readRequests")&&e instanceof ReadableStreamDefaultReader)}function ee(e,t){const r=e._readRequests;e._readRequests=new v,r.forEach((e=>{e._errorSteps(t)}))}function te(e){return new TypeError(`ReadableStreamDefaultReader.prototype.${e} can only be used on a ReadableStreamDefaultReader`)}Object.defineProperties(ReadableStreamDefaultReader.prototype,{cancel:{enumerable:!0},read:{enumerable:!0},releaseLock:{enumerable:!0},closed:{enumerable:!0}}),a(ReadableStreamDefaultReader.prototype.cancel,"cancel"),a(ReadableStreamDefaultReader.prototype.read,"read"),a(ReadableStreamDefaultReader.prototype.releaseLock,"releaseLock"),"symbol"==typeof t.toStringTag&&Object.defineProperty(ReadableStreamDefaultReader.prototype,t.toStringTag,{value:"ReadableStreamDefaultReader",configurable:!0});class re{constructor(e,t){this._ongoingPromise=void 0,this._isFinished=!1,this._reader=e,this._preventCancel=t}next(){const e=()=>this._nextSteps();return this._ongoingPromise=this._ongoingPromise?m(this._ongoingPromise,e,e):e(),this._ongoingPromise}return(e){const t=()=>this._returnSteps(e);return this._ongoingPromise?m(this._ongoingPromise,t,t):t()}_nextSteps(){if(this._isFinished)return Promise.resolve({value:void 0,done:!0});const e=this._reader;return void 0===e?f(k("iterate")):b(e.read(),(e=>{var t;return this._ongoingPromise=void 0,e.done&&(this._isFinished=!0,null===(t=this._reader)||void 0===t||t.releaseLock(),this._reader=void 0),e}),(e=>{var t;throw this._ongoingPromise=void 0,this._isFinished=!0,null===(t=this._reader)||void 0===t||t.releaseLock(),this._reader=void 0,e}))}_returnSteps(e){if(this._isFinished)return Promise.resolve({value:e,done:!0});this._isFinished=!0;const t=this._reader;if(void 0===t)return f(k("finish iterating"));if(this._reader=void 0,!this._preventCancel){const r=t.cancel(e);return t.releaseLock(),m(r,(()=>({value:e,done:!0})))}return t.releaseLock(),d({value:e,done:!0})}}const oe={next(){return ne(this)?this._asyncIteratorImpl.next():f(ae("next"))},return(e){return ne(this)?this._asyncIteratorImpl.return(e):f(ae("return"))}};function ne(e){if(!o(e))return!1;if(!Object.prototype.hasOwnProperty.call(e,"_asyncIteratorImpl"))return!1;try{return e._asyncIteratorImpl instanceof re}catch(e){return!1}}function ae(e){return new TypeError(`ReadableStreamAsyncIterator.${e} can only be used on a ReadableSteamAsyncIterator`)}"symbol"==typeof t.asyncIterator&&Object.defineProperty(oe,t.asyncIterator,{value(){return this},writable:!0,configurable:!0});const ie=Number.isNaN||function(e){return e!=e};function le(e,t,r,o,n){new Uint8Array(e).set(new Uint8Array(r,o,n),t)}function se(e){const t=function(e,t,r){if(e.slice)return e.slice(t,r);const o=r-t,n=new ArrayBuffer(o);return le(n,0,e,t,o),n}(e.buffer,e.byteOffset,e.byteOffset+e.byteLength);return new Uint8Array(t)}function ue(e){const t=e._queue.shift();return e._queueTotalSize-=t.size,e._queueTotalSize<0&&(e._queueTotalSize=0),t.value}function ce(e,t,r){if("number"!=typeof(o=r)||ie(o)||o<0||r===1/0)throw new RangeError("Size must be a finite, non-NaN, non-negative number.");var o;e._queue.push({value:t,size:r}),e._queueTotalSize+=r}function de(e){e._queue=new v,e._queueTotalSize=0}class ReadableStreamBYOBRequest{constructor(){throw new TypeError("Illegal constructor")}get view(){if(!be(this))throw Ae("view");return this._view}respond(e){if(!be(this))throw Ae("respond");if(M(e,1,"respond"),e=x(e,"First parameter"),void 0===this._associatedReadableByteStreamController)throw new TypeError("This BYOB request has been invalidated");this._view.buffer,function(e,t){const r=e._pendingPullIntos.peek();if("closed"===e._controlledReadableByteStream._state){if(0!==t)throw new TypeError("bytesWritten must be 0 when calling respond() on a closed stream")}else{if(0===t)throw new TypeError("bytesWritten must be greater than 0 when calling respond() on a readable stream");if(r.bytesFilled+t>r.byteLength)throw new RangeError("bytesWritten out of range")}r.buffer=r.buffer,Ce(e,t)}(this._associatedReadableByteStreamController,e)}respondWithNewView(e){if(!be(this))throw Ae("respondWithNewView");if(M(e,1,"respondWithNewView"),!ArrayBuffer.isView(e))throw new TypeError("You can only respond with array buffer views");if(void 0===this._associatedReadableByteStreamController)throw new TypeError("This BYOB request has been invalidated");e.buffer,function(e,t){const r=e._pendingPullIntos.peek();if("closed"===e._controlledReadableByteStream._state){if(0!==t.byteLength)throw new TypeError("The view's length must be 0 when calling respondWithNewView() on a closed stream")}else if(0===t.byteLength)throw new TypeError("The view's length must be greater than 0 when calling respondWithNewView() on a readable stream");if(r.byteOffset+r.bytesFilled!==t.byteOffset)throw new RangeError("The region specified by view does not match byobRequest");if(r.bufferByteLength!==t.buffer.byteLength)throw new RangeError("The buffer of view has different capacity than byobRequest");if(r.bytesFilled+t.byteLength>r.byteLength)throw new RangeError("The region specified by view is larger than byobRequest");const o=t.byteLength;r.buffer=t.buffer,Ce(e,o)}(this._associatedReadableByteStreamController,e)}}Object.defineProperties(ReadableStreamBYOBRequest.prototype,{respond:{enumerable:!0},respondWithNewView:{enumerable:!0},view:{enumerable:!0}}),a(ReadableStreamBYOBRequest.prototype.respond,"respond"),a(ReadableStreamBYOBRequest.prototype.respondWithNewView,"respondWithNewView"),"symbol"==typeof t.toStringTag&&Object.defineProperty(ReadableStreamBYOBRequest.prototype,t.toStringTag,{value:"ReadableStreamBYOBRequest",configurable:!0});class ReadableByteStreamController{constructor(){throw new TypeError("Illegal constructor")}get byobRequest(){if(!fe(this))throw je("byobRequest");return function(e){if(null===e._byobRequest&&e._pendingPullIntos.length>0){const t=e._pendingPullIntos.peek(),r=new Uint8Array(t.buffer,t.byteOffset+t.bytesFilled,t.byteLength-t.bytesFilled),o=Object.create(ReadableStreamBYOBRequest.prototype);!function(e,t,r){e._associatedReadableByteStreamController=t,e._view=r}(o,e,r),e._byobRequest=o}return e._byobRequest}(this)}get desiredSize(){if(!fe(this))throw je("desiredSize");return ke(this)}close(){if(!fe(this))throw je("close");if(this._closeRequested)throw new TypeError("The stream has already been closed; do not close it again!");const e=this._controlledReadableByteStream._state;if("readable"!==e)throw new TypeError(`The stream (in ${e} state) is not in the readable state and cannot be closed`);!function(e){const t=e._controlledReadableByteStream;if(e._closeRequested||"readable"!==t._state)return;if(e._queueTotalSize>0)return void(e._closeRequested=!0);if(e._pendingPullIntos.length>0){if(e._pendingPullIntos.peek().bytesFilled>0){const t=new TypeError("Insufficient bytes to fill elements in the given buffer");throw We(e,t),t}}Ee(e),Jt(t)}(this)}enqueue(e){if(!fe(this))throw je("enqueue");if(M(e,1,"enqueue"),!ArrayBuffer.isView(e))throw new TypeError("chunk must be an array buffer view");if(0===e.byteLength)throw new TypeError("chunk must have non-zero byteLength");if(0===e.buffer.byteLength)throw new TypeError("chunk's buffer must have non-zero byteLength");if(this._closeRequested)throw new TypeError("stream is closed or draining");const t=this._controlledReadableByteStream._state;if("readable"!==t)throw new TypeError(`The stream (in ${t} state) is not in the readable state and cannot be enqueued to`);!function(e,t){const r=e._controlledReadableByteStream;if(e._closeRequested||"readable"!==r._state)return;const o=t.buffer,n=t.byteOffset,a=t.byteLength,i=o;if(e._pendingPullIntos.length>0){const t=e._pendingPullIntos.peek();t.buffer,0,Te(e),t.buffer=t.buffer,"none"===t.readerType&&Se(e,t)}if(K(r))if(function(e){const t=e._controlledReadableByteStream._reader;for(;t._readRequests.length>0;){if(0===e._queueTotalSize)return;Oe(e,t._readRequests.shift())}}(e),0===J(r))ye(e,i,n,a);else{e._pendingPullIntos.length>0&&Pe(e);X(r,new Uint8Array(i,n,a),!1)}else Fe(r)?(ye(e,i,n,a),qe(e)):ye(e,i,n,a);he(e)}(this,e)}error(e){if(!fe(this))throw je("error");We(this,e)}[q](e){_e(this),de(this);const t=this._cancelAlgorithm(e);return Ee(this),t}[C](e){const t=this._controlledReadableByteStream;if(this._queueTotalSize>0)return void Oe(this,e);const r=this._autoAllocateChunkSize;if(void 0!==r){let t;try{t=new ArrayBuffer(r)}catch(t){return void e._errorSteps(t)}const o={buffer:t,bufferByteLength:r,byteOffset:0,byteLength:r,bytesFilled:0,elementSize:1,viewConstructor:Uint8Array,readerType:"default"};this._pendingPullIntos.push(o)}G(t,e),he(this)}[P](){if(this._pendingPullIntos.length>0){const e=this._pendingPullIntos.peek();e.readerType="none",this._pendingPullIntos=new v,this._pendingPullIntos.push(e)}}}function fe(e){return!!o(e)&&(!!Object.prototype.hasOwnProperty.call(e,"_controlledReadableByteStream")&&e instanceof ReadableByteStreamController)}function be(e){return!!o(e)&&(!!Object.prototype.hasOwnProperty.call(e,"_associatedReadableByteStreamController")&&e instanceof ReadableStreamBYOBRequest)}function he(e){const t=function(e){const t=e._controlledReadableByteStream;if("readable"!==t._state)return!1;if(e._closeRequested)return!1;if(!e._started)return!1;if(K(t)&&J(t)>0)return!0;if(Fe(t)&&Le(t)>0)return!0;if(ke(e)>0)return!0;return!1}(e);if(!t)return;if(e._pulling)return void(e._pullAgain=!0);e._pulling=!0;h(e._pullAlgorithm(),(()=>(e._pulling=!1,e._pullAgain&&(e._pullAgain=!1,he(e)),null)),(t=>(We(e,t),null)))}function _e(e){Te(e),e._pendingPullIntos=new v}function pe(e,t){let r=!1;"closed"===e._state&&(r=!0);const o=me(t);"default"===t.readerType?X(e,o,r):function(e,t,r){const o=e._reader._readIntoRequests.shift();r?o._closeSteps(t):o._chunkSteps(t)}(e,o,r)}function me(e){const t=e.bytesFilled,r=e.elementSize;return new e.viewConstructor(e.buffer,e.byteOffset,t/r)}function ye(e,t,r,o){e._queue.push({buffer:t,byteOffset:r,byteLength:o}),e._queueTotalSize+=o}function ge(e,t,r,o){let n;try{n=t.slice(r,r+o)}catch(t){throw We(e,t),t}ye(e,n,0,o)}function Se(e,t){t.bytesFilled>0&&ge(e,t.buffer,t.byteOffset,t.bytesFilled),Pe(e)}function we(e,t){const r=t.elementSize,o=t.bytesFilled-t.bytesFilled%r,n=Math.min(e._queueTotalSize,t.byteLength-t.bytesFilled),a=t.bytesFilled+n,i=a-a%r;let l=n,s=!1;i>o&&(l=i-t.bytesFilled,s=!0);const u=e._queue;for(;l>0;){const r=u.peek(),o=Math.min(l,r.byteLength),n=t.byteOffset+t.bytesFilled;le(t.buffer,n,r.buffer,r.byteOffset,o),r.byteLength===o?u.shift():(r.byteOffset+=o,r.byteLength-=o),e._queueTotalSize-=o,ve(e,o,t),l-=o}return s}function ve(e,t,r){r.bytesFilled+=t}function Re(e){0===e._queueTotalSize&&e._closeRequested?(Ee(e),Jt(e._controlledReadableByteStream)):he(e)}function Te(e){null!==e._byobRequest&&(e._byobRequest._associatedReadableByteStreamController=void 0,e._byobRequest._view=null,e._byobRequest=null)}function qe(e){for(;e._pendingPullIntos.length>0;){if(0===e._queueTotalSize)return;const t=e._pendingPullIntos.peek();we(e,t)&&(Pe(e),pe(e._controlledReadableByteStream,t))}}function Ce(e,t){const r=e._pendingPullIntos.peek();Te(e);"closed"===e._controlledReadableByteStream._state?function(e,t){"none"===t.readerType&&Pe(e);const r=e._controlledReadableByteStream;if(Fe(r))for(;Le(r)>0;)pe(r,Pe(e))}(e,r):function(e,t,r){if(ve(0,t,r),"none"===r.readerType)return Se(e,r),void qe(e);if(r.bytesFilled<r.elementSize)return;Pe(e);const o=r.bytesFilled%r.elementSize;if(o>0){const t=r.byteOffset+r.bytesFilled;ge(e,r.buffer,t-o,o)}r.bytesFilled-=o,pe(e._controlledReadableByteStream,r),qe(e)}(e,t,r),he(e)}function Pe(e){return e._pendingPullIntos.shift()}function Ee(e){e._pullAlgorithm=void 0,e._cancelAlgorithm=void 0}function We(e,t){const r=e._controlledReadableByteStream;"readable"===r._state&&(_e(e),de(e),Ee(e),Kt(r,t))}function Oe(e,t){const r=e._queue.shift();e._queueTotalSize-=r.byteLength,Re(e);const o=new Uint8Array(r.buffer,r.byteOffset,r.byteLength);t._chunkSteps(o)}function ke(e){const t=e._controlledReadableByteStream._state;return"errored"===t?null:"closed"===t?0:e._strategyHWM-e._queueTotalSize}function Be(e,t,r){const o=Object.create(ReadableByteStreamController.prototype);let n,a,i;n=void 0!==t.start?()=>t.start(o):()=>{},a=void 0!==t.pull?()=>t.pull(o):()=>d(void 0),i=void 0!==t.cancel?e=>t.cancel(e):()=>d(void 0);const l=t.autoAllocateChunkSize;if(0===l)throw new TypeError("autoAllocateChunkSize must be greater than 0");!function(e,t,r,o,n,a,i){t._controlledReadableByteStream=e,t._pullAgain=!1,t._pulling=!1,t._byobRequest=null,t._queue=t._queueTotalSize=void 0,de(t),t._closeRequested=!1,t._started=!1,t._strategyHWM=a,t._pullAlgorithm=o,t._cancelAlgorithm=n,t._autoAllocateChunkSize=i,t._pendingPullIntos=new v,e._readableStreamController=t,h(d(r()),(()=>(t._started=!0,he(t),null)),(e=>(We(t,e),null)))}(e,o,n,a,i,r,l)}function Ae(e){return new TypeError(`ReadableStreamBYOBRequest.prototype.${e} can only be used on a ReadableStreamBYOBRequest`)}function je(e){return new TypeError(`ReadableByteStreamController.prototype.${e} can only be used on a ReadableByteStreamController`)}function ze(e,t){e._reader._readIntoRequests.push(t)}function Le(e){return e._reader._readIntoRequests.length}function Fe(e){const t=e._reader;return void 0!==t&&!!De(t)}Object.defineProperties(ReadableByteStreamController.prototype,{close:{enumerable:!0},enqueue:{enumerable:!0},error:{enumerable:!0},byobRequest:{enumerable:!0},desiredSize:{enumerable:!0}}),a(ReadableByteStreamController.prototype.close,"close"),a(ReadableByteStreamController.prototype.enqueue,"enqueue"),a(ReadableByteStreamController.prototype.error,"error"),"symbol"==typeof t.toStringTag&&Object.defineProperty(ReadableByteStreamController.prototype,t.toStringTag,{value:"ReadableByteStreamController",configurable:!0});class ReadableStreamBYOBReader{constructor(e){if(M(e,1,"ReadableStreamBYOBReader"),U(e,"First parameter"),Gt(e))throw new TypeError("This stream has already been locked for exclusive reading by another reader");if(!fe(e._readableStreamController))throw new TypeError("Cannot construct a ReadableStreamBYOBReader for a stream not constructed with a byte source");E(this,e),this._readIntoRequests=new v}get closed(){return De(this)?this._closedPromise:f($e("closed"))}cancel(e){return De(this)?void 0===this._ownerReadableStream?f(k("cancel")):W(this,e):f($e("cancel"))}read(e){if(!De(this))return f($e("read"));if(!ArrayBuffer.isView(e))return f(new TypeError("view must be an array buffer view"));if(0===e.byteLength)return f(new TypeError("view must have non-zero byteLength"));if(0===e.buffer.byteLength)return f(new TypeError("view's buffer must have non-zero byteLength"));if(e.buffer,void 0===this._ownerReadableStream)return f(k("read from"));let t,r;const o=c(((e,o)=>{t=e,r=o}));return function(e,t,r){const o=e._ownerReadableStream;o._disturbed=!0,"errored"===o._state?r._errorSteps(o._storedError):function(e,t,r){const o=e._controlledReadableByteStream;let n=1;t.constructor!==DataView&&(n=t.constructor.BYTES_PER_ELEMENT);const a=t.constructor,i=t.buffer,l={buffer:i,bufferByteLength:i.byteLength,byteOffset:t.byteOffset,byteLength:t.byteLength,bytesFilled:0,elementSize:n,viewConstructor:a,readerType:"byob"};if(e._pendingPullIntos.length>0)return e._pendingPullIntos.push(l),void ze(o,r);if("closed"!==o._state){if(e._queueTotalSize>0){if(we(e,l)){const t=me(l);return Re(e),void r._chunkSteps(t)}if(e._closeRequested){const t=new TypeError("Insufficient bytes to fill elements in the given buffer");return We(e,t),void r._errorSteps(t)}}e._pendingPullIntos.push(l),ze(o,r),he(e)}else{const e=new a(l.buffer,l.byteOffset,0);r._closeSteps(e)}}(o._readableStreamController,t,r)}(this,e,{_chunkSteps:e=>t({value:e,done:!1}),_closeSteps:e=>t({value:e,done:!0}),_errorSteps:e=>r(e)}),o}releaseLock(){if(!De(this))throw $e("releaseLock");void 0!==this._ownerReadableStream&&function(e){O(e);const t=new TypeError("Reader was released");Ie(e,t)}(this)}}function De(e){return!!o(e)&&(!!Object.prototype.hasOwnProperty.call(e,"_readIntoRequests")&&e instanceof ReadableStreamBYOBReader)}function Ie(e,t){const r=e._readIntoRequests;e._readIntoRequests=new v,r.forEach((e=>{e._errorSteps(t)}))}function $e(e){return new TypeError(`ReadableStreamBYOBReader.prototype.${e} can only be used on a ReadableStreamBYOBReader`)}function Me(e,t){const{highWaterMark:r}=e;if(void 0===r)return t;if(ie(r)||r<0)throw new RangeError("Invalid highWaterMark");return r}function Ye(e){const{size:t}=e;return t||(()=>1)}function Qe(e,t){D(e,t);const r=null==e?void 0:e.highWaterMark,o=null==e?void 0:e.size;return{highWaterMark:void 0===r?void 0:Q(r),size:void 0===o?void 0:Ne(o,`${t} has member 'size' that`)}}function Ne(e,t){return I(e,t),t=>Q(e(t))}function xe(e,t,r){return I(e,r),r=>w(e,t,[r])}function He(e,t,r){return I(e,r),()=>w(e,t,[])}function Ve(e,t,r){return I(e,r),r=>S(e,t,[r])}function Ue(e,t,r){return I(e,r),(r,o)=>w(e,t,[r,o])}Object.defineProperties(ReadableStreamBYOBReader.prototype,{cancel:{enumerable:!0},read:{enumerable:!0},releaseLock:{enumerable:!0},closed:{enumerable:!0}}),a(ReadableStreamBYOBReader.prototype.cancel,"cancel"),a(ReadableStreamBYOBReader.prototype.read,"read"),a(ReadableStreamBYOBReader.prototype.releaseLock,"releaseLock"),"symbol"==typeof t.toStringTag&&Object.defineProperty(ReadableStreamBYOBReader.prototype,t.toStringTag,{value:"ReadableStreamBYOBReader",configurable:!0});const Ge="function"==typeof AbortController;class WritableStream{constructor(e={},t={}){void 0===e?e=null:$(e,"First parameter");const r=Qe(t,"Second parameter"),o=function(e,t){D(e,t);const r=null==e?void 0:e.abort,o=null==e?void 0:e.close,n=null==e?void 0:e.start,a=null==e?void 0:e.type,i=null==e?void 0:e.write;return{abort:void 0===r?void 0:xe(r,e,`${t} has member 'abort' that`),close:void 0===o?void 0:He(o,e,`${t} has member 'close' that`),start:void 0===n?void 0:Ve(n,e,`${t} has member 'start' that`),write:void 0===i?void 0:Ue(i,e,`${t} has member 'write' that`),type:a}}(e,"First parameter");var n;(n=this)._state="writable",n._storedError=void 0,n._writer=void 0,n._writableStreamController=void 0,n._writeRequests=new v,n._inFlightWriteRequest=void 0,n._closeRequest=void 0,n._inFlightCloseRequest=void 0,n._pendingAbortRequest=void 0,n._backpressure=!1;if(void 0!==o.type)throw new RangeError("Invalid type is specified");const a=Ye(r);!function(e,t,r,o){const n=Object.create(WritableStreamDefaultController.prototype);let a,i,l,s;a=void 0!==t.start?()=>t.start(n):()=>{};i=void 0!==t.write?e=>t.write(e,n):()=>d(void 0);l=void 0!==t.close?()=>t.close():()=>d(void 0);s=void 0!==t.abort?e=>t.abort(e):()=>d(void 0);!function(e,t,r,o,n,a,i,l){t._controlledWritableStream=e,e._writableStreamController=t,t._queue=void 0,t._queueTotalSize=void 0,de(t),t._abortReason=void 0,t._abortController=function(){if(Ge)return new AbortController}(),t._started=!1,t._strategySizeAlgorithm=l,t._strategyHWM=i,t._writeAlgorithm=o,t._closeAlgorithm=n,t._abortAlgorithm=a;const s=ht(t);at(e,s);const u=r();h(d(u),(()=>(t._started=!0,ft(t),null)),(r=>(t._started=!0,et(e,r),null)))}(e,n,a,i,l,s,r,o)}(this,o,Me(r,1),a)}get locked(){if(!Xe(this))throw pt("locked");return Je(this)}abort(e){return Xe(this)?Je(this)?f(new TypeError("Cannot abort a stream that already has a writer")):Ke(this,e):f(pt("abort"))}close(){return Xe(this)?Je(this)?f(new TypeError("Cannot close a stream that already has a writer")):ot(this)?f(new TypeError("Cannot close an already-closing stream")):Ze(this):f(pt("close"))}getWriter(){if(!Xe(this))throw pt("getWriter");return new WritableStreamDefaultWriter(this)}}function Xe(e){return!!o(e)&&(!!Object.prototype.hasOwnProperty.call(e,"_writableStreamController")&&e instanceof WritableStream)}function Je(e){return void 0!==e._writer}function Ke(e,t){var r;if("closed"===e._state||"errored"===e._state)return d(void 0);e._writableStreamController._abortReason=t,null===(r=e._writableStreamController._abortController)||void 0===r||r.abort(t);const o=e._state;if("closed"===o||"errored"===o)return d(void 0);if(void 0!==e._pendingAbortRequest)return e._pendingAbortRequest._promise;let n=!1;"erroring"===o&&(n=!0,t=void 0);const a=c(((r,o)=>{e._pendingAbortRequest={_promise:void 0,_resolve:r,_reject:o,_reason:t,_wasAlreadyErroring:n}}));return e._pendingAbortRequest._promise=a,n||tt(e,t),a}function Ze(e){const t=e._state;if("closed"===t||"errored"===t)return f(new TypeError(`The stream (in ${t} state) is not in the writable state and cannot be closed`));const r=c(((t,r)=>{const o={_resolve:t,_reject:r};e._closeRequest=o})),o=e._writer;var n;return void 0!==o&&e._backpressure&&"writable"===t&&Et(o),ce(n=e._writableStreamController,st,0),ft(n),r}function et(e,t){"writable"!==e._state?rt(e):tt(e,t)}function tt(e,t){const r=e._writableStreamController;e._state="erroring",e._storedError=t;const o=e._writer;void 0!==o&&lt(o,t),!function(e){if(void 0===e._inFlightWriteRequest&&void 0===e._inFlightCloseRequest)return!1;return!0}(e)&&r._started&&rt(e)}function rt(e){e._state="errored",e._writableStreamController[T]();const t=e._storedError;if(e._writeRequests.forEach((e=>{e._reject(t)})),e._writeRequests=new v,void 0===e._pendingAbortRequest)return void nt(e);const r=e._pendingAbortRequest;if(e._pendingAbortRequest=void 0,r._wasAlreadyErroring)return r._reject(t),void nt(e);h(e._writableStreamController[R](r._reason),(()=>(r._resolve(),nt(e),null)),(t=>(r._reject(t),nt(e),null)))}function ot(e){return void 0!==e._closeRequest||void 0!==e._inFlightCloseRequest}function nt(e){void 0!==e._closeRequest&&(e._closeRequest._reject(e._storedError),e._closeRequest=void 0);const t=e._writer;void 0!==t&&vt(t,e._storedError)}function at(e,t){const r=e._writer;void 0!==r&&t!==e._backpressure&&(t?function(e){Tt(e)}(r):Et(r)),e._backpressure=t}Object.defineProperties(WritableStream.prototype,{abort:{enumerable:!0},close:{enumerable:!0},getWriter:{enumerable:!0},locked:{enumerable:!0}}),a(WritableStream.prototype.abort,"abort"),a(WritableStream.prototype.close,"close"),a(WritableStream.prototype.getWriter,"getWriter"),"symbol"==typeof t.toStringTag&&Object.defineProperty(WritableStream.prototype,t.toStringTag,{value:"WritableStream",configurable:!0});class WritableStreamDefaultWriter{constructor(e){if(M(e,1,"WritableStreamDefaultWriter"),function(e,t){if(!Xe(e))throw new TypeError(`${t} is not a WritableStream.`)}(e,"First parameter"),Je(e))throw new TypeError("This stream has already been locked for exclusive writing by another writer");this._ownerWritableStream=e,e._writer=this;const t=e._state;if("writable"===t)!ot(e)&&e._backpressure?Tt(this):Ct(this),St(this);else if("erroring"===t)qt(this,e._storedError),St(this);else if("closed"===t)Ct(this),St(r=this),Rt(r);else{const t=e._storedError;qt(this,t),wt(this,t)}var r}get closed(){return it(this)?this._closedPromise:f(yt("closed"))}get desiredSize(){if(!it(this))throw yt("desiredSize");if(void 0===this._ownerWritableStream)throw gt("desiredSize");return function(e){const t=e._ownerWritableStream,r=t._state;if("errored"===r||"erroring"===r)return null;if("closed"===r)return 0;return dt(t._writableStreamController)}(this)}get ready(){return it(this)?this._readyPromise:f(yt("ready"))}abort(e){return it(this)?void 0===this._ownerWritableStream?f(gt("abort")):function(e,t){return Ke(e._ownerWritableStream,t)}(this,e):f(yt("abort"))}close(){if(!it(this))return f(yt("close"));const e=this._ownerWritableStream;return void 0===e?f(gt("close")):ot(e)?f(new TypeError("Cannot close an already-closing stream")):Ze(this._ownerWritableStream)}releaseLock(){if(!it(this))throw yt("releaseLock");void 0!==this._ownerWritableStream&&function(e){const t=e._ownerWritableStream,r=new TypeError("Writer was released and can no longer be used to monitor the stream's closedness");lt(e,r),function(e,t){"pending"===e._closedPromiseState?vt(e,t):function(e,t){wt(e,t)}(e,t)}(e,r),t._writer=void 0,e._ownerWritableStream=void 0}(this)}write(e){return it(this)?void 0===this._ownerWritableStream?f(gt("write to")):function(e,t){const r=e._ownerWritableStream,o=r._writableStreamController,n=function(e,t){try{return e._strategySizeAlgorithm(t)}catch(t){return bt(e,t),1}}(o,t);if(r!==e._ownerWritableStream)return f(gt("write to"));const a=r._state;if("errored"===a)return f(r._storedError);if(ot(r)||"closed"===a)return f(new TypeError("The stream is closing or closed and cannot be written to"));if("erroring"===a)return f(r._storedError);const i=function(e){return c(((t,r)=>{const o={_resolve:t,_reject:r};e._writeRequests.push(o)}))}(r);return function(e,t,r){try{ce(e,t,r)}catch(t){return void bt(e,t)}const o=e._controlledWritableStream;if(!ot(o)&&"writable"===o._state){at(o,ht(e))}ft(e)}(o,t,n),i}(this,e):f(yt("write"))}}function it(e){return!!o(e)&&(!!Object.prototype.hasOwnProperty.call(e,"_ownerWritableStream")&&e instanceof WritableStreamDefaultWriter)}function lt(e,t){"pending"===e._readyPromiseState?Pt(e,t):function(e,t){qt(e,t)}(e,t)}Object.defineProperties(WritableStreamDefaultWriter.prototype,{abort:{enumerable:!0},close:{enumerable:!0},releaseLock:{enumerable:!0},write:{enumerable:!0},closed:{enumerable:!0},desiredSize:{enumerable:!0},ready:{enumerable:!0}}),a(WritableStreamDefaultWriter.prototype.abort,"abort"),a(WritableStreamDefaultWriter.prototype.close,"close"),a(WritableStreamDefaultWriter.prototype.releaseLock,"releaseLock"),a(WritableStreamDefaultWriter.prototype.write,"write"),"symbol"==typeof t.toStringTag&&Object.defineProperty(WritableStreamDefaultWriter.prototype,t.toStringTag,{value:"WritableStreamDefaultWriter",configurable:!0});const st={};class WritableStreamDefaultController{constructor(){throw new TypeError("Illegal constructor")}get abortReason(){if(!ut(this))throw mt("abortReason");return this._abortReason}get signal(){if(!ut(this))throw mt("signal");if(void 0===this._abortController)throw new TypeError("WritableStreamDefaultController.prototype.signal is not supported");return this._abortController.signal}error(e){if(!ut(this))throw mt("error");"writable"===this._controlledWritableStream._state&&_t(this,e)}[R](e){const t=this._abortAlgorithm(e);return ct(this),t}[T](){de(this)}}function ut(e){return!!o(e)&&(!!Object.prototype.hasOwnProperty.call(e,"_controlledWritableStream")&&e instanceof WritableStreamDefaultController)}function ct(e){e._writeAlgorithm=void 0,e._closeAlgorithm=void 0,e._abortAlgorithm=void 0,e._strategySizeAlgorithm=void 0}function dt(e){return e._strategyHWM-e._queueTotalSize}function ft(e){const t=e._controlledWritableStream;if(!e._started)return;if(void 0!==t._inFlightWriteRequest)return;if("erroring"===t._state)return void rt(t);if(0===e._queue.length)return;const r=e._queue.peek().value;r===st?function(e){const t=e._controlledWritableStream;(function(e){e._inFlightCloseRequest=e._closeRequest,e._closeRequest=void 0})(t),ue(e);const r=e._closeAlgorithm();ct(e),h(r,(()=>(function(e){e._inFlightCloseRequest._resolve(void 0),e._inFlightCloseRequest=void 0,"erroring"===e._state&&(e._storedError=void 0,void 0!==e._pendingAbortRequest&&(e._pendingAbortRequest._resolve(),e._pendingAbortRequest=void 0)),e._state="closed";const t=e._writer;void 0!==t&&Rt(t)}(t),null)),(e=>(function(e,t){e._inFlightCloseRequest._reject(t),e._inFlightCloseRequest=void 0,void 0!==e._pendingAbortRequest&&(e._pendingAbortRequest._reject(t),e._pendingAbortRequest=void 0),et(e,t)}(t,e),null)))}(e):function(e,t){const r=e._controlledWritableStream;!function(e){e._inFlightWriteRequest=e._writeRequests.shift()}(r);h(e._writeAlgorithm(t),(()=>{!function(e){e._inFlightWriteRequest._resolve(void 0),e._inFlightWriteRequest=void 0}(r);const t=r._state;if(ue(e),!ot(r)&&"writable"===t){const t=ht(e);at(r,t)}return ft(e),null}),(t=>("writable"===r._state&&ct(e),function(e,t){e._inFlightWriteRequest._reject(t),e._inFlightWriteRequest=void 0,et(e,t)}(r,t),null)))}(e,r)}function bt(e,t){"writable"===e._controlledWritableStream._state&&_t(e,t)}function ht(e){return dt(e)<=0}function _t(e,t){const r=e._controlledWritableStream;ct(e),tt(r,t)}function pt(e){return new TypeError(`WritableStream.prototype.${e} can only be used on a WritableStream`)}function mt(e){return new TypeError(`WritableStreamDefaultController.prototype.${e} can only be used on a WritableStreamDefaultController`)}function yt(e){return new TypeError(`WritableStreamDefaultWriter.prototype.${e} can only be used on a WritableStreamDefaultWriter`)}function gt(e){return new TypeError("Cannot "+e+" a stream using a released writer")}function St(e){e._closedPromise=c(((t,r)=>{e._closedPromise_resolve=t,e._closedPromise_reject=r,e._closedPromiseState="pending"}))}function wt(e,t){St(e),vt(e,t)}function vt(e,t){void 0!==e._closedPromise_reject&&(y(e._closedPromise),e._closedPromise_reject(t),e._closedPromise_resolve=void 0,e._closedPromise_reject=void 0,e._closedPromiseState="rejected")}function Rt(e){void 0!==e._closedPromise_resolve&&(e._closedPromise_resolve(void 0),e._closedPromise_resolve=void 0,e._closedPromise_reject=void 0,e._closedPromiseState="resolved")}function Tt(e){e._readyPromise=c(((t,r)=>{e._readyPromise_resolve=t,e._readyPromise_reject=r})),e._readyPromiseState="pending"}function qt(e,t){Tt(e),Pt(e,t)}function Ct(e){Tt(e),Et(e)}function Pt(e,t){void 0!==e._readyPromise_reject&&(y(e._readyPromise),e._readyPromise_reject(t),e._readyPromise_resolve=void 0,e._readyPromise_reject=void 0,e._readyPromiseState="rejected")}function Et(e){void 0!==e._readyPromise_resolve&&(e._readyPromise_resolve(void 0),e._readyPromise_resolve=void 0,e._readyPromise_reject=void 0,e._readyPromiseState="fulfilled")}Object.defineProperties(WritableStreamDefaultController.prototype,{abortReason:{enumerable:!0},signal:{enumerable:!0},error:{enumerable:!0}}),"symbol"==typeof t.toStringTag&&Object.defineProperty(WritableStreamDefaultController.prototype,t.toStringTag,{value:"WritableStreamDefaultController",configurable:!0});const Wt="undefined"!=typeof DOMException?DOMException:void 0;const Ot=function(e){if("function"!=typeof e&&"object"!=typeof e)return!1;try{return new e,!0}catch(e){return!1}}(Wt)?Wt:function(){const e=function(e,t){this.message=e||"",this.name=t||"Error",Error.captureStackTrace&&Error.captureStackTrace(this,this.constructor)};return e.prototype=Object.create(Error.prototype),Object.defineProperty(e.prototype,"constructor",{value:e,writable:!0,configurable:!0}),e}();function kt(e,t,r,o,n,a){const i=e.getReader(),l=t.getWriter();Ut(e)&&(e._disturbed=!0);let s,u,p,S=!1,w=!1,v="readable",R="writable",T=!1,q=!1;const C=c((e=>{p=e}));let P=Promise.resolve(void 0);return c(((E,W)=>{let O;function k(){if(S)return;const e=c(((e,t)=>{!function r(o){o?e():b(function(){if(S)return d(!0);return b(l.ready,(()=>b(i.read(),(e=>!!e.done||(P=l.write(e.value),y(P),!1)))))}(),r,t)}(!1)}));y(e)}function B(){return v="closed",r?L():z((()=>(Xe(t)&&(T=ot(t),R=t._state),T||"closed"===R?d(void 0):"erroring"===R||"errored"===R?f(u):(T=!0,l.close()))),!1,void 0),null}function A(e){return S||(v="errored",s=e,o?L(!0,e):z((()=>l.abort(e)),!0,e)),null}function j(e){return w||(R="errored",u=e,n?L(!0,e):z((()=>i.cancel(e)),!0,e)),null}if(void 0!==a&&(O=()=>{const e=void 0!==a.reason?a.reason:new Ot("Aborted","AbortError"),t=[];o||t.push((()=>"writable"===R?l.abort(e):d(void 0))),n||t.push((()=>"readable"===v?i.cancel(e):d(void 0))),z((()=>Promise.all(t.map((e=>e())))),!0,e)},a.aborted?O():a.addEventListener("abort",O)),Ut(e)&&(v=e._state,s=e._storedError),Xe(t)&&(R=t._state,u=t._storedError,T=ot(t)),Ut(e)&&Xe(t)&&(q=!0,p()),"errored"===v)A(s);else if("erroring"===R||"errored"===R)j(u);else if("closed"===v)B();else if(T||"closed"===R){const e=new TypeError("the destination writable stream closed before all data could be piped to it");n?L(!0,e):z((()=>i.cancel(e)),!0,e)}function z(e,t,r){function o(){return"writable"!==R||T?n():_(function(){let e;return d(function t(){if(e!==P)return e=P,m(P,t,t)}())}(),n),null}function n(){return e?h(e(),(()=>F(t,r)),(e=>F(!0,e))):F(t,r),null}S||(S=!0,q?o():_(C,o))}function L(e,t){z(void 0,e,t)}function F(e,t){return w=!0,l.releaseLock(),i.releaseLock(),void 0!==a&&a.removeEventListener("abort",O),e?W(t):E(void 0),null}S||(h(i.closed,B,A),h(l.closed,(function(){return w||(R="closed"),null}),j)),q?k():g((()=>{q=!0,p(),k()}))}))}function Bt(e,t){return function(e){try{return e.getReader({mode:"byob"}).releaseLock(),!0}catch(e){return!1}}(e)?function(e){let t,r,o,n,a,i=e.getReader(),l=!1,s=!1,u=!1,f=!1,b=!1,_=!1;const m=c((e=>{a=e}));function y(e){p(e.closed,(t=>(e!==i||(o.error(t),n.error(t),b&&_||a(void 0)),null)))}function g(){l&&(i.releaseLock(),i=e.getReader(),y(i),l=!1),h(i.read(),(e=>{var t,r;if(u=!1,f=!1,e.done)return b||o.close(),_||n.close(),null===(t=o.byobRequest)||void 0===t||t.respond(0),null===(r=n.byobRequest)||void 0===r||r.respond(0),b&&_||a(void 0),null;const l=e.value,c=l;let d=l;if(!b&&!_)try{d=se(l)}catch(e){return o.error(e),n.error(e),a(i.cancel(e)),null}return b||o.enqueue(c),_||n.enqueue(d),s=!1,u?w():f&&v(),null}),(()=>(s=!1,null)))}function S(t,r){l||(i.releaseLock(),i=e.getReader({mode:"byob"}),y(i),l=!0);const c=r?n:o,d=r?o:n;h(i.read(t),(e=>{var t;u=!1,f=!1;const o=r?_:b,n=r?b:_;if(e.done){o||c.close(),n||d.close();const r=e.value;return void 0!==r&&(o||c.byobRequest.respondWithNewView(r),n||null===(t=d.byobRequest)||void 0===t||t.respond(0)),o&&n||a(void 0),null}const l=e.value;if(n)o||c.byobRequest.respondWithNewView(l);else{let e;try{e=se(l)}catch(e){return c.error(e),d.error(e),a(i.cancel(e)),null}o||c.byobRequest.respondWithNewView(l),d.enqueue(e)}return s=!1,u?w():f&&v(),null}),(()=>(s=!1,null)))}function w(){if(s)return u=!0,d(void 0);s=!0;const e=o.byobRequest;return null===e?g():S(e.view,!1),d(void 0)}function v(){if(s)return f=!0,d(void 0);s=!0;const e=n.byobRequest;return null===e?g():S(e.view,!0),d(void 0)}function R(e){if(b=!0,t=e,_){const e=[t,r],o=i.cancel(e);a(o)}return m}function T(e){if(_=!0,r=e,b){const e=[t,r],o=i.cancel(e);a(o)}return m}const q=new ReadableStream({type:"bytes",start(e){o=e},pull:w,cancel:R}),C=new ReadableStream({type:"bytes",start(e){n=e},pull:v,cancel:T});return y(i),[q,C]}(e):function(e,t){const r=e.getReader();let o,n,a,i,l,s=!1,u=!1,f=!1,b=!1;const _=c((e=>{l=e}));function m(){return s?(u=!0,d(void 0)):(s=!0,h(r.read(),(e=>{if(u=!1,e.done)return f||a.close(),b||i.close(),f&&b||l(void 0),null;const t=e.value,r=t,o=t;return f||a.enqueue(r),b||i.enqueue(o),s=!1,u&&m(),null}),(()=>(s=!1,null))),d(void 0))}function y(e){if(f=!0,o=e,b){const e=[o,n],t=r.cancel(e);l(t)}return _}function g(e){if(b=!0,n=e,f){const e=[o,n],t=r.cancel(e);l(t)}return _}const S=new ReadableStream({start(e){a=e},pull:m,cancel:y}),w=new ReadableStream({start(e){i=e},pull:m,cancel:g});return p(r.closed,(e=>(a.error(e),i.error(e),f&&b||l(void 0),null))),[S,w]}(e)}class ReadableStreamDefaultController{constructor(){throw new TypeError("Illegal constructor")}get desiredSize(){if(!At(this))throw $t("desiredSize");return Ft(this)}close(){if(!At(this))throw $t("close");if(!Dt(this))throw new TypeError("The stream is not in a state that permits close");!function(e){if(!Dt(e))return;const t=e._controlledReadableStream;e._closeRequested=!0,0===e._queue.length&&(zt(e),Jt(t))}(this)}enqueue(e){if(!At(this))throw $t("enqueue");if(!Dt(this))throw new TypeError("The stream is not in a state that permits enqueue");return function(e,t){if(!Dt(e))return;const r=e._controlledReadableStream;if(Gt(r)&&J(r)>0)X(r,t,!1);else{let r;try{r=e._strategySizeAlgorithm(t)}catch(t){throw Lt(e,t),t}try{ce(e,t,r)}catch(t){throw Lt(e,t),t}}jt(e)}(this,e)}error(e){if(!At(this))throw $t("error");Lt(this,e)}[q](e){de(this);const t=this._cancelAlgorithm(e);return zt(this),t}[C](e){const t=this._controlledReadableStream;if(this._queue.length>0){const r=ue(this);this._closeRequested&&0===this._queue.length?(zt(this),Jt(t)):jt(this),e._chunkSteps(r)}else G(t,e),jt(this)}[P](){}}function At(e){return!!o(e)&&(!!Object.prototype.hasOwnProperty.call(e,"_controlledReadableStream")&&e instanceof ReadableStreamDefaultController)}function jt(e){const t=function(e){const t=e._controlledReadableStream;if(!Dt(e))return!1;if(!e._started)return!1;if(Gt(t)&&J(t)>0)return!0;if(Ft(e)>0)return!0;return!1}(e);if(!t)return;if(e._pulling)return void(e._pullAgain=!0);e._pulling=!0;h(e._pullAlgorithm(),(()=>(e._pulling=!1,e._pullAgain&&(e._pullAgain=!1,jt(e)),null)),(t=>(Lt(e,t),null)))}function zt(e){e._pullAlgorithm=void 0,e._cancelAlgorithm=void 0,e._strategySizeAlgorithm=void 0}function Lt(e,t){const r=e._controlledReadableStream;"readable"===r._state&&(de(e),zt(e),Kt(r,t))}function Ft(e){const t=e._controlledReadableStream._state;return"errored"===t?null:"closed"===t?0:e._strategyHWM-e._queueTotalSize}function Dt(e){return!e._closeRequested&&"readable"===e._controlledReadableStream._state}function It(e,t,r,o){const n=Object.create(ReadableStreamDefaultController.prototype);let a,i,l;a=void 0!==t.start?()=>t.start(n):()=>{},i=void 0!==t.pull?()=>t.pull(n):()=>d(void 0),l=void 0!==t.cancel?e=>t.cancel(e):()=>d(void 0),function(e,t,r,o,n,a,i){t._controlledReadableStream=e,t._queue=void 0,t._queueTotalSize=void 0,de(t),t._started=!1,t._closeRequested=!1,t._pullAgain=!1,t._pulling=!1,t._strategySizeAlgorithm=i,t._strategyHWM=a,t._pullAlgorithm=o,t._cancelAlgorithm=n,e._readableStreamController=t,h(d(r()),(()=>(t._started=!0,jt(t),null)),(e=>(Lt(t,e),null)))}(e,n,a,i,l,r,o)}function $t(e){return new TypeError(`ReadableStreamDefaultController.prototype.${e} can only be used on a ReadableStreamDefaultController`)}function Mt(e,t,r){return I(e,r),r=>w(e,t,[r])}function Yt(e,t,r){return I(e,r),r=>w(e,t,[r])}function Qt(e,t,r){return I(e,r),r=>S(e,t,[r])}function Nt(e,t){if("bytes"!==(e=`${e}`))throw new TypeError(`${t} '${e}' is not a valid enumeration value for ReadableStreamType`);return e}function xt(e,t){if("byob"!==(e=`${e}`))throw new TypeError(`${t} '${e}' is not a valid enumeration value for ReadableStreamReaderMode`);return e}function Ht(e,t){D(e,t);const r=null==e?void 0:e.preventAbort,o=null==e?void 0:e.preventCancel,n=null==e?void 0:e.preventClose,a=null==e?void 0:e.signal;return void 0!==a&&function(e,t){if(!function(e){if("object"!=typeof e||null===e)return!1;try{return"boolean"==typeof e.aborted}catch(e){return!1}}(e))throw new TypeError(`${t} is not an AbortSignal.`)}(a,`${t} has member 'signal' that`),{preventAbort:Boolean(r),preventCancel:Boolean(o),preventClose:Boolean(n),signal:a}}function Vt(e,t){D(e,t);const r=null==e?void 0:e.readable;Y(r,"readable","ReadableWritablePair"),function(e,t){if(!H(e))throw new TypeError(`${t} is not a ReadableStream.`)}(r,`${t} has member 'readable' that`);const o=null==e?void 0:e.writable;return Y(o,"writable","ReadableWritablePair"),function(e,t){if(!V(e))throw new TypeError(`${t} is not a WritableStream.`)}(o,`${t} has member 'writable' that`),{readable:r,writable:o}}Object.defineProperties(ReadableStreamDefaultController.prototype,{close:{enumerable:!0},enqueue:{enumerable:!0},error:{enumerable:!0},desiredSize:{enumerable:!0}}),a(ReadableStreamDefaultController.prototype.close,"close"),a(ReadableStreamDefaultController.prototype.enqueue,"enqueue"),a(ReadableStreamDefaultController.prototype.error,"error"),"symbol"==typeof t.toStringTag&&Object.defineProperty(ReadableStreamDefaultController.prototype,t.toStringTag,{value:"ReadableStreamDefaultController",configurable:!0});class ReadableStream{constructor(e={},t={}){void 0===e?e=null:$(e,"First parameter");const r=Qe(t,"Second parameter"),o=function(e,t){D(e,t);const r=e,o=null==r?void 0:r.autoAllocateChunkSize,n=null==r?void 0:r.cancel,a=null==r?void 0:r.pull,i=null==r?void 0:r.start,l=null==r?void 0:r.type;return{autoAllocateChunkSize:void 0===o?void 0:x(o,`${t} has member 'autoAllocateChunkSize' that`),cancel:void 0===n?void 0:Mt(n,r,`${t} has member 'cancel' that`),pull:void 0===a?void 0:Yt(a,r,`${t} has member 'pull' that`),start:void 0===i?void 0:Qt(i,r,`${t} has member 'start' that`),type:void 0===l?void 0:Nt(l,`${t} has member 'type' that`)}}(e,"First parameter");var n;if((n=this)._state="readable",n._reader=void 0,n._storedError=void 0,n._disturbed=!1,"bytes"===o.type){if(void 0!==r.size)throw new RangeError("The strategy for a byte stream cannot have a size function");Be(this,o,Me(r,0))}else{const e=Ye(r);It(this,o,Me(r,1),e)}}get locked(){if(!Ut(this))throw Zt("locked");return Gt(this)}cancel(e){return Ut(this)?Gt(this)?f(new TypeError("Cannot cancel a stream that already has a reader")):Xt(this,e):f(Zt("cancel"))}getReader(e){if(!Ut(this))throw Zt("getReader");return void 0===function(e,t){D(e,t);const r=null==e?void 0:e.mode;return{mode:void 0===r?void 0:xt(r,`${t} has member 'mode' that`)}}(e,"First parameter").mode?new ReadableStreamDefaultReader(this):function(e){return new ReadableStreamBYOBReader(e)}(this)}pipeThrough(e,t={}){if(!H(this))throw Zt("pipeThrough");M(e,1,"pipeThrough");const r=Vt(e,"First parameter"),o=Ht(t,"Second parameter");if(this.locked)throw new TypeError("ReadableStream.prototype.pipeThrough cannot be used on a locked ReadableStream");if(r.writable.locked)throw new TypeError("ReadableStream.prototype.pipeThrough cannot be used on a locked WritableStream");return y(kt(this,r.writable,o.preventClose,o.preventAbort,o.preventCancel,o.signal)),r.readable}pipeTo(e,t={}){if(!H(this))return f(Zt("pipeTo"));if(void 0===e)return f("Parameter 1 is required in 'pipeTo'.");if(!V(e))return f(new TypeError("ReadableStream.prototype.pipeTo's first argument must be a WritableStream"));let r;try{r=Ht(t,"Second parameter")}catch(e){return f(e)}return this.locked?f(new TypeError("ReadableStream.prototype.pipeTo cannot be used on a locked ReadableStream")):e.locked?f(new TypeError("ReadableStream.prototype.pipeTo cannot be used on a locked WritableStream")):kt(this,e,r.preventClose,r.preventAbort,r.preventCancel,r.signal)}tee(){if(!H(this))throw Zt("tee");if(this.locked)throw new TypeError("Cannot tee a stream that already has a reader");return Bt(this)}values(e){if(!H(this))throw Zt("values");return function(e,t){const r=e.getReader(),o=new re(r,t),n=Object.create(oe);return n._asyncIteratorImpl=o,n}(this,function(e,t){D(e,t);const r=null==e?void 0:e.preventCancel;return{preventCancel:Boolean(r)}}(e,"First parameter").preventCancel)}}function Ut(e){return!!o(e)&&(!!Object.prototype.hasOwnProperty.call(e,"_readableStreamController")&&e instanceof ReadableStream)}function Gt(e){return void 0!==e._reader}function Xt(e,t){if(e._disturbed=!0,"closed"===e._state)return d(void 0);if("errored"===e._state)return f(e._storedError);Jt(e);const o=e._reader;if(void 0!==o&&De(o)){const e=o._readIntoRequests;o._readIntoRequests=new v,e.forEach((e=>{e._closeSteps(void 0)}))}return m(e._readableStreamController[q](t),r)}function Jt(e){e._state="closed";const t=e._reader;if(void 0!==t&&(z(t),Z(t))){const e=t._readRequests;t._readRequests=new v,e.forEach((e=>{e._closeSteps()}))}}function Kt(e,t){e._state="errored",e._storedError=t;const r=e._reader;void 0!==r&&(j(r,t),Z(r)?ee(r,t):Ie(r,t))}function Zt(e){return new TypeError(`ReadableStream.prototype.${e} can only be used on a ReadableStream`)}function er(e,t){D(e,t);const r=null==e?void 0:e.highWaterMark;return Y(r,"highWaterMark","QueuingStrategyInit"),{highWaterMark:Q(r)}}Object.defineProperties(ReadableStream.prototype,{cancel:{enumerable:!0},getReader:{enumerable:!0},pipeThrough:{enumerable:!0},pipeTo:{enumerable:!0},tee:{enumerable:!0},values:{enumerable:!0},locked:{enumerable:!0}}),a(ReadableStream.prototype.cancel,"cancel"),a(ReadableStream.prototype.getReader,"getReader"),a(ReadableStream.prototype.pipeThrough,"pipeThrough"),a(ReadableStream.prototype.pipeTo,"pipeTo"),a(ReadableStream.prototype.tee,"tee"),a(ReadableStream.prototype.values,"values"),"symbol"==typeof t.toStringTag&&Object.defineProperty(ReadableStream.prototype,t.toStringTag,{value:"ReadableStream",configurable:!0}),"symbol"==typeof t.asyncIterator&&Object.defineProperty(ReadableStream.prototype,t.asyncIterator,{value:ReadableStream.prototype.values,writable:!0,configurable:!0});const tr=e=>e.byteLength;a(tr,"size");class ByteLengthQueuingStrategy{constructor(e){M(e,1,"ByteLengthQueuingStrategy"),e=er(e,"First parameter"),this._byteLengthQueuingStrategyHighWaterMark=e.highWaterMark}get highWaterMark(){if(!or(this))throw rr("highWaterMark");return this._byteLengthQueuingStrategyHighWaterMark}get size(){if(!or(this))throw rr("size");return tr}}function rr(e){return new TypeError(`ByteLengthQueuingStrategy.prototype.${e} can only be used on a ByteLengthQueuingStrategy`)}function or(e){return!!o(e)&&(!!Object.prototype.hasOwnProperty.call(e,"_byteLengthQueuingStrategyHighWaterMark")&&e instanceof ByteLengthQueuingStrategy)}Object.defineProperties(ByteLengthQueuingStrategy.prototype,{highWaterMark:{enumerable:!0},size:{enumerable:!0}}),"symbol"==typeof t.toStringTag&&Object.defineProperty(ByteLengthQueuingStrategy.prototype,t.toStringTag,{value:"ByteLengthQueuingStrategy",configurable:!0});const nr=()=>1;a(nr,"size");class CountQueuingStrategy{constructor(e){M(e,1,"CountQueuingStrategy"),e=er(e,"First parameter"),this._countQueuingStrategyHighWaterMark=e.highWaterMark}get highWaterMark(){if(!ir(this))throw ar("highWaterMark");return this._countQueuingStrategyHighWaterMark}get size(){if(!ir(this))throw ar("size");return nr}}function ar(e){return new TypeError(`CountQueuingStrategy.prototype.${e} can only be used on a CountQueuingStrategy`)}function ir(e){return!!o(e)&&(!!Object.prototype.hasOwnProperty.call(e,"_countQueuingStrategyHighWaterMark")&&e instanceof CountQueuingStrategy)}function lr(e,t,r){return I(e,r),r=>w(e,t,[r])}function sr(e,t,r){return I(e,r),r=>S(e,t,[r])}function ur(e,t,r){return I(e,r),(r,o)=>w(e,t,[r,o])}Object.defineProperties(CountQueuingStrategy.prototype,{highWaterMark:{enumerable:!0},size:{enumerable:!0}}),"symbol"==typeof t.toStringTag&&Object.defineProperty(CountQueuingStrategy.prototype,t.toStringTag,{value:"CountQueuingStrategy",configurable:!0});class TransformStream{constructor(e={},t={},r={}){void 0===e&&(e=null);const o=Qe(t,"Second parameter"),n=Qe(r,"Third parameter"),a=function(e,t){D(e,t);const r=null==e?void 0:e.flush,o=null==e?void 0:e.readableType,n=null==e?void 0:e.start,a=null==e?void 0:e.transform,i=null==e?void 0:e.writableType;return{flush:void 0===r?void 0:lr(r,e,`${t} has member 'flush' that`),readableType:o,start:void 0===n?void 0:sr(n,e,`${t} has member 'start' that`),transform:void 0===a?void 0:ur(a,e,`${t} has member 'transform' that`),writableType:i}}(e,"First parameter");if(void 0!==a.readableType)throw new RangeError("Invalid readableType specified");if(void 0!==a.writableType)throw new RangeError("Invalid writableType specified");const i=Me(n,0),l=Ye(n),s=Me(o,1),u=Ye(o);let b;!function(e,t,r,o,n,a){function i(){return t}function l(t){return function(e,t){const r=e._transformStreamController;if(e._backpressure){return m(e._backpressureChangePromise,(()=>{if("erroring"===(Xe(e._writable)?e._writable._state:e._writableState))throw Xe(e._writable)?e._writable._storedError:e._writableStoredError;return mr(r,t)}))}return mr(r,t)}(e,t)}function s(t){return function(e,t){return dr(e,t),d(void 0)}(e,t)}function u(){return function(e){const t=e._transformStreamController,r=t._flushAlgorithm();return _r(t),m(r,(()=>{if("errored"===e._readableState)throw e._readableStoredError;Sr(e)&&wr(e)}),(t=>{throw dr(e,t),e._readableStoredError}))}(e)}function c(){return function(e){return br(e,!1),e._backpressureChangePromise}(e)}function f(t){return fr(e,t),d(void 0)}e._writableState="writable",e._writableStoredError=void 0,e._writableHasInFlightOperation=!1,e._writableStarted=!1,e._writable=function(e,t,r,o,n,a,i){return new WritableStream({start(r){e._writableController=r;try{const t=r.signal;void 0!==t&&t.addEventListener("abort",(()=>{"writable"===e._writableState&&(e._writableState="erroring",t.reason&&(e._writableStoredError=t.reason))}))}catch(e){}return m(t(),(()=>(e._writableStarted=!0,Pr(e),null)),(t=>{throw e._writableStarted=!0,Tr(e,t),t}))},write:t=>(function(e){e._writableHasInFlightOperation=!0}(e),m(r(t),(()=>(function(e){e._writableHasInFlightOperation=!1}(e),Pr(e),null)),(t=>{throw function(e,t){e._writableHasInFlightOperation=!1,Tr(e,t)}(e,t),t}))),close:()=>(function(e){e._writableHasInFlightOperation=!0}(e),m(o(),(()=>(function(e){e._writableHasInFlightOperation=!1;"erroring"===e._writableState&&(e._writableStoredError=void 0);e._writableState="closed"}(e),null)),(t=>{throw function(e,t){e._writableHasInFlightOperation=!1,e._writableState,Tr(e,t)}(e,t),t}))),abort:t=>(e._writableState="errored",e._writableStoredError=t,n(t))},{highWaterMark:a,size:i})}(e,i,l,u,s,r,o),e._readableState="readable",e._readableStoredError=void 0,e._readableCloseRequested=!1,e._readablePulling=!1,e._readable=function(e,t,r,o,n,a){return new ReadableStream({start:r=>(e._readableController=r,t().catch((t=>{vr(e,t)}))),pull:()=>(e._readablePulling=!0,r().catch((t=>{vr(e,t)}))),cancel:t=>(e._readableState="closed",o(t))},{highWaterMark:n,size:a})}(e,i,c,f,n,a),e._backpressure=void 0,e._backpressureChangePromise=void 0,e._backpressureChangePromise_resolve=void 0,br(e,!0),e._transformStreamController=void 0}(this,c((e=>{b=e})),s,u,i,l),function(e,t){const r=Object.create(TransformStreamDefaultController.prototype);let o,n;o=void 0!==t.transform?e=>t.transform(e,r):e=>{try{return pr(r,e),d(void 0)}catch(e){return f(e)}};n=void 0!==t.flush?()=>t.flush(r):()=>d(void 0);!function(e,t,r,o){t._controlledTransformStream=e,e._transformStreamController=t,t._transformAlgorithm=r,t._flushAlgorithm=o}(e,r,o,n)}(this,a),void 0!==a.start?b(a.start(this._transformStreamController)):b(void 0)}get readable(){if(!cr(this))throw gr("readable");return this._readable}get writable(){if(!cr(this))throw gr("writable");return this._writable}}function cr(e){return!!o(e)&&(!!Object.prototype.hasOwnProperty.call(e,"_transformStreamController")&&e instanceof TransformStream)}function dr(e,t){vr(e,t),fr(e,t)}function fr(e,t){_r(e._transformStreamController),function(e,t){e._writableController.error(t);"writable"===e._writableState&&qr(e,t)}(e,t),e._backpressure&&br(e,!1)}function br(e,t){void 0!==e._backpressureChangePromise&&e._backpressureChangePromise_resolve(),e._backpressureChangePromise=c((t=>{e._backpressureChangePromise_resolve=t})),e._backpressure=t}Object.defineProperties(TransformStream.prototype,{readable:{enumerable:!0},writable:{enumerable:!0}}),"symbol"==typeof t.toStringTag&&Object.defineProperty(TransformStream.prototype,t.toStringTag,{value:"TransformStream",configurable:!0});class TransformStreamDefaultController{constructor(){throw new TypeError("Illegal constructor")}get desiredSize(){if(!hr(this))throw yr("desiredSize");return Rr(this._controlledTransformStream)}enqueue(e){if(!hr(this))throw yr("enqueue");pr(this,e)}error(e){if(!hr(this))throw yr("error");var t;t=e,dr(this._controlledTransformStream,t)}terminate(){if(!hr(this))throw yr("terminate");!function(e){const t=e._controlledTransformStream;Sr(t)&&wr(t);const r=new TypeError("TransformStream terminated");fr(t,r)}(this)}}function hr(e){return!!o(e)&&(!!Object.prototype.hasOwnProperty.call(e,"_controlledTransformStream")&&e instanceof TransformStreamDefaultController)}function _r(e){e._transformAlgorithm=void 0,e._flushAlgorithm=void 0}function pr(e,t){const r=e._controlledTransformStream;if(!Sr(r))throw new TypeError("Readable side is not in a state that permits enqueue");try{!function(e,t){e._readablePulling=!1;try{e._readableController.enqueue(t)}catch(t){throw vr(e,t),t}}(r,t)}catch(e){throw fr(r,e),r._readableStoredError}const o=function(e){return!function(e){if(!Sr(e))return!1;if(e._readablePulling)return!0;if(Rr(e)>0)return!0;return!1}(e)}(r);o!==r._backpressure&&br(r,!0)}function mr(e,t){return m(e._transformAlgorithm(t),void 0,(t=>{throw dr(e._controlledTransformStream,t),t}))}function yr(e){return new TypeError(`TransformStreamDefaultController.prototype.${e} can only be used on a TransformStreamDefaultController`)}function gr(e){return new TypeError(`TransformStream.prototype.${e} can only be used on a TransformStream`)}function Sr(e){return!e._readableCloseRequested&&"readable"===e._readableState}function wr(e){e._readableState="closed",e._readableCloseRequested=!0,e._readableController.close()}function vr(e,t){"readable"===e._readableState&&(e._readableState="errored",e._readableStoredError=t),e._readableController.error(t)}function Rr(e){return e._readableController.desiredSize}function Tr(e,t){"writable"!==e._writableState?Cr(e):qr(e,t)}function qr(e,t){e._writableState="erroring",e._writableStoredError=t,!function(e){return e._writableHasInFlightOperation}(e)&&e._writableStarted&&Cr(e)}function Cr(e){e._writableState="errored"}function Pr(e){"erroring"===e._writableState&&Cr(e)}Object.defineProperties(TransformStreamDefaultController.prototype,{enqueue:{enumerable:!0},error:{enumerable:!0},terminate:{enumerable:!0},desiredSize:{enumerable:!0}}),a(TransformStreamDefaultController.prototype.enqueue,"enqueue"),a(TransformStreamDefaultController.prototype.error,"error"),a(TransformStreamDefaultController.prototype.terminate,"terminate"),"symbol"==typeof t.toStringTag&&Object.defineProperty(TransformStreamDefaultController.prototype,t.toStringTag,{value:"TransformStreamDefaultController",configurable:!0}),e.ByteLengthQueuingStrategy=ByteLengthQueuingStrategy,e.CountQueuingStrategy=CountQueuingStrategy,e.ReadableByteStreamController=ReadableByteStreamController,e.ReadableStream=ReadableStream,e.ReadableStreamBYOBReader=ReadableStreamBYOBReader,e.ReadableStreamBYOBRequest=ReadableStreamBYOBRequest,e.ReadableStreamDefaultController=ReadableStreamDefaultController,e.ReadableStreamDefaultReader=ReadableStreamDefaultReader,e.TransformStream=TransformStream,e.TransformStreamDefaultController=TransformStreamDefaultController,e.WritableStream=WritableStream,e.WritableStreamDefaultController=WritableStreamDefaultController,e.WritableStreamDefaultWriter=WritableStreamDefaultWriter,Object.defineProperty(e,"__esModule",{value:!0})}));
+
 
 /***/ }),
 
@@ -24723,6 +21062,14 @@ module.exports = require("net");
 
 /***/ }),
 
+/***/ 4492:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:stream");
+
+/***/ }),
+
 /***/ 2037:
 /***/ ((module) => {
 
@@ -24811,7 +21158,835 @@ module.exports = require("zlib");
 
 /***/ }),
 
-/***/ 8946:
+/***/ 1778:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 5860:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+var _FormDataEncoder_instances, _FormDataEncoder_CRLF, _FormDataEncoder_CRLF_BYTES, _FormDataEncoder_CRLF_BYTES_LENGTH, _FormDataEncoder_DASHES, _FormDataEncoder_encoder, _FormDataEncoder_footer, _FormDataEncoder_form, _FormDataEncoder_options, _FormDataEncoder_getFieldHeader;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Encoder = exports.FormDataEncoder = void 0;
+const createBoundary_1 = __importDefault(__nccwpck_require__(7956));
+const isPlainObject_1 = __importDefault(__nccwpck_require__(5240));
+const normalizeValue_1 = __importDefault(__nccwpck_require__(1391));
+const escapeName_1 = __importDefault(__nccwpck_require__(3864));
+const isFileLike_1 = __nccwpck_require__(6860);
+const isFormData_1 = __nccwpck_require__(1633);
+const defaultOptions = {
+    enableAdditionalHeaders: false
+};
+class FormDataEncoder {
+    constructor(form, boundaryOrOptions, options) {
+        _FormDataEncoder_instances.add(this);
+        _FormDataEncoder_CRLF.set(this, "\r\n");
+        _FormDataEncoder_CRLF_BYTES.set(this, void 0);
+        _FormDataEncoder_CRLF_BYTES_LENGTH.set(this, void 0);
+        _FormDataEncoder_DASHES.set(this, "-".repeat(2));
+        _FormDataEncoder_encoder.set(this, new TextEncoder());
+        _FormDataEncoder_footer.set(this, void 0);
+        _FormDataEncoder_form.set(this, void 0);
+        _FormDataEncoder_options.set(this, void 0);
+        if (!(0, isFormData_1.isFormData)(form)) {
+            throw new TypeError("Expected first argument to be a FormData instance.");
+        }
+        let boundary;
+        if ((0, isPlainObject_1.default)(boundaryOrOptions)) {
+            options = boundaryOrOptions;
+        }
+        else {
+            boundary = boundaryOrOptions;
+        }
+        if (!boundary) {
+            boundary = (0, createBoundary_1.default)();
+        }
+        if (typeof boundary !== "string") {
+            throw new TypeError("Expected boundary argument to be a string.");
+        }
+        if (options && !(0, isPlainObject_1.default)(options)) {
+            throw new TypeError("Expected options argument to be an object.");
+        }
+        __classPrivateFieldSet(this, _FormDataEncoder_form, form, "f");
+        __classPrivateFieldSet(this, _FormDataEncoder_options, { ...defaultOptions, ...options }, "f");
+        __classPrivateFieldSet(this, _FormDataEncoder_CRLF_BYTES, __classPrivateFieldGet(this, _FormDataEncoder_encoder, "f").encode(__classPrivateFieldGet(this, _FormDataEncoder_CRLF, "f")), "f");
+        __classPrivateFieldSet(this, _FormDataEncoder_CRLF_BYTES_LENGTH, __classPrivateFieldGet(this, _FormDataEncoder_CRLF_BYTES, "f").byteLength, "f");
+        this.boundary = `form-data-boundary-${boundary}`;
+        this.contentType = `multipart/form-data; boundary=${this.boundary}`;
+        __classPrivateFieldSet(this, _FormDataEncoder_footer, __classPrivateFieldGet(this, _FormDataEncoder_encoder, "f").encode(`${__classPrivateFieldGet(this, _FormDataEncoder_DASHES, "f")}${this.boundary}${__classPrivateFieldGet(this, _FormDataEncoder_DASHES, "f")}${__classPrivateFieldGet(this, _FormDataEncoder_CRLF, "f").repeat(2)}`), "f");
+        this.contentLength = String(this.getContentLength());
+        this.headers = Object.freeze({
+            "Content-Type": this.contentType,
+            "Content-Length": this.contentLength
+        });
+        Object.defineProperties(this, {
+            boundary: { writable: false, configurable: false },
+            contentType: { writable: false, configurable: false },
+            contentLength: { writable: false, configurable: false },
+            headers: { writable: false, configurable: false }
+        });
+    }
+    getContentLength() {
+        let length = 0;
+        for (const [name, raw] of __classPrivateFieldGet(this, _FormDataEncoder_form, "f")) {
+            const value = (0, isFileLike_1.isFileLike)(raw) ? raw : __classPrivateFieldGet(this, _FormDataEncoder_encoder, "f").encode((0, normalizeValue_1.default)(raw));
+            length += __classPrivateFieldGet(this, _FormDataEncoder_instances, "m", _FormDataEncoder_getFieldHeader).call(this, name, value).byteLength;
+            length += (0, isFileLike_1.isFileLike)(value) ? value.size : value.byteLength;
+            length += __classPrivateFieldGet(this, _FormDataEncoder_CRLF_BYTES_LENGTH, "f");
+        }
+        return length + __classPrivateFieldGet(this, _FormDataEncoder_footer, "f").byteLength;
+    }
+    *values() {
+        for (const [name, raw] of __classPrivateFieldGet(this, _FormDataEncoder_form, "f").entries()) {
+            const value = (0, isFileLike_1.isFileLike)(raw) ? raw : __classPrivateFieldGet(this, _FormDataEncoder_encoder, "f").encode((0, normalizeValue_1.default)(raw));
+            yield __classPrivateFieldGet(this, _FormDataEncoder_instances, "m", _FormDataEncoder_getFieldHeader).call(this, name, value);
+            yield value;
+            yield __classPrivateFieldGet(this, _FormDataEncoder_CRLF_BYTES, "f");
+        }
+        yield __classPrivateFieldGet(this, _FormDataEncoder_footer, "f");
+    }
+    async *encode() {
+        for (const part of this.values()) {
+            if ((0, isFileLike_1.isFileLike)(part)) {
+                yield* part.stream();
+            }
+            else {
+                yield part;
+            }
+        }
+    }
+    [(_FormDataEncoder_CRLF = new WeakMap(), _FormDataEncoder_CRLF_BYTES = new WeakMap(), _FormDataEncoder_CRLF_BYTES_LENGTH = new WeakMap(), _FormDataEncoder_DASHES = new WeakMap(), _FormDataEncoder_encoder = new WeakMap(), _FormDataEncoder_footer = new WeakMap(), _FormDataEncoder_form = new WeakMap(), _FormDataEncoder_options = new WeakMap(), _FormDataEncoder_instances = new WeakSet(), _FormDataEncoder_getFieldHeader = function _FormDataEncoder_getFieldHeader(name, value) {
+        let header = "";
+        header += `${__classPrivateFieldGet(this, _FormDataEncoder_DASHES, "f")}${this.boundary}${__classPrivateFieldGet(this, _FormDataEncoder_CRLF, "f")}`;
+        header += `Content-Disposition: form-data; name="${(0, escapeName_1.default)(name)}"`;
+        if ((0, isFileLike_1.isFileLike)(value)) {
+            header += `; filename="${(0, escapeName_1.default)(value.name)}"${__classPrivateFieldGet(this, _FormDataEncoder_CRLF, "f")}`;
+            header += `Content-Type: ${value.type || "application/octet-stream"}`;
+        }
+        if (__classPrivateFieldGet(this, _FormDataEncoder_options, "f").enableAdditionalHeaders === true) {
+            header += `${__classPrivateFieldGet(this, _FormDataEncoder_CRLF, "f")}Content-Length: ${(0, isFileLike_1.isFileLike)(value) ? value.size : value.byteLength}`;
+        }
+        return __classPrivateFieldGet(this, _FormDataEncoder_encoder, "f").encode(`${header}${__classPrivateFieldGet(this, _FormDataEncoder_CRLF, "f").repeat(2)}`);
+    }, Symbol.iterator)]() {
+        return this.values();
+    }
+    [Symbol.asyncIterator]() {
+        return this.encode();
+    }
+}
+exports.FormDataEncoder = FormDataEncoder;
+exports.Encoder = FormDataEncoder;
+
+
+/***/ }),
+
+/***/ 6921:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 8824:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(5860), exports);
+__exportStar(__nccwpck_require__(1778), exports);
+__exportStar(__nccwpck_require__(6921), exports);
+__exportStar(__nccwpck_require__(6860), exports);
+__exportStar(__nccwpck_require__(1633), exports);
+
+
+/***/ }),
+
+/***/ 7956:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+function createBoundary() {
+    let size = 16;
+    let res = "";
+    while (size--) {
+        res += alphabet[(Math.random() * alphabet.length) << 0];
+    }
+    return res;
+}
+exports["default"] = createBoundary;
+
+
+/***/ }),
+
+/***/ 3864:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const escapeName = (name) => String(name)
+    .replace(/\r/g, "%0D")
+    .replace(/\n/g, "%0A")
+    .replace(/"/g, "%22");
+exports["default"] = escapeName;
+
+
+/***/ }),
+
+/***/ 6860:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isFileLike = void 0;
+const isFunction_1 = __importDefault(__nccwpck_require__(2498));
+const isFileLike = (value) => Boolean(value
+    && typeof value === "object"
+    && (0, isFunction_1.default)(value.constructor)
+    && value[Symbol.toStringTag] === "File"
+    && (0, isFunction_1.default)(value.stream)
+    && value.name != null
+    && value.size != null
+    && value.lastModified != null);
+exports.isFileLike = isFileLike;
+
+
+/***/ }),
+
+/***/ 1633:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isFormDataLike = exports.isFormData = void 0;
+const isFunction_1 = __importDefault(__nccwpck_require__(2498));
+const isFormData = (value) => Boolean(value
+    && (0, isFunction_1.default)(value.constructor)
+    && value[Symbol.toStringTag] === "FormData"
+    && (0, isFunction_1.default)(value.append)
+    && (0, isFunction_1.default)(value.getAll)
+    && (0, isFunction_1.default)(value.entries)
+    && (0, isFunction_1.default)(value[Symbol.iterator]));
+exports.isFormData = isFormData;
+exports.isFormDataLike = exports.isFormData;
+
+
+/***/ }),
+
+/***/ 2498:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const isFunction = (value) => (typeof value === "function");
+exports["default"] = isFunction;
+
+
+/***/ }),
+
+/***/ 5240:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const getType = (value) => (Object.prototype.toString.call(value).slice(8, -1).toLowerCase());
+function isPlainObject(value) {
+    if (getType(value) !== "object") {
+        return false;
+    }
+    const pp = Object.getPrototypeOf(value);
+    if (pp === null || pp === undefined) {
+        return true;
+    }
+    const Ctor = pp.constructor && pp.constructor.toString();
+    return Ctor === Object.toString();
+}
+exports["default"] = isPlainObject;
+
+
+/***/ }),
+
+/***/ 1391:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const normalizeValue = (value) => String(value)
+    .replace(/\r|\n/g, (match, i, str) => {
+    if ((match === "\r" && str[i + 1] !== "\n")
+        || (match === "\n" && str[i - 1] !== "\r")) {
+        return "\r\n";
+    }
+    return match;
+});
+exports["default"] = normalizeValue;
+
+
+/***/ }),
+
+/***/ 6637:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+/*! Based on fetch-blob. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> & David Frank */
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var _Blob_parts, _Blob_type, _Blob_size;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Blob = void 0;
+const web_streams_polyfill_1 = __nccwpck_require__(5650);
+const isFunction_1 = __nccwpck_require__(4245);
+const blobHelpers_1 = __nccwpck_require__(7058);
+class Blob {
+    constructor(blobParts = [], options = {}) {
+        _Blob_parts.set(this, []);
+        _Blob_type.set(this, "");
+        _Blob_size.set(this, 0);
+        options !== null && options !== void 0 ? options : (options = {});
+        if (typeof blobParts !== "object" || blobParts === null) {
+            throw new TypeError("Failed to construct 'Blob': "
+                + "The provided value cannot be converted to a sequence.");
+        }
+        if (!(0, isFunction_1.isFunction)(blobParts[Symbol.iterator])) {
+            throw new TypeError("Failed to construct 'Blob': "
+                + "The object must have a callable @@iterator property.");
+        }
+        if (typeof options !== "object" && !(0, isFunction_1.isFunction)(options)) {
+            throw new TypeError("Failed to construct 'Blob': parameter 2 cannot convert to dictionary.");
+        }
+        const encoder = new TextEncoder();
+        for (const raw of blobParts) {
+            let part;
+            if (ArrayBuffer.isView(raw)) {
+                part = new Uint8Array(raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength));
+            }
+            else if (raw instanceof ArrayBuffer) {
+                part = new Uint8Array(raw.slice(0));
+            }
+            else if (raw instanceof Blob) {
+                part = raw;
+            }
+            else {
+                part = encoder.encode(String(raw));
+            }
+            __classPrivateFieldSet(this, _Blob_size, __classPrivateFieldGet(this, _Blob_size, "f") + (ArrayBuffer.isView(part) ? part.byteLength : part.size), "f");
+            __classPrivateFieldGet(this, _Blob_parts, "f").push(part);
+        }
+        const type = options.type === undefined ? "" : String(options.type);
+        __classPrivateFieldSet(this, _Blob_type, /^[\x20-\x7E]*$/.test(type) ? type : "", "f");
+    }
+    static [(_Blob_parts = new WeakMap(), _Blob_type = new WeakMap(), _Blob_size = new WeakMap(), Symbol.hasInstance)](value) {
+        return Boolean(value
+            && typeof value === "object"
+            && (0, isFunction_1.isFunction)(value.constructor)
+            && ((0, isFunction_1.isFunction)(value.stream)
+                || (0, isFunction_1.isFunction)(value.arrayBuffer))
+            && /^(Blob|File)$/.test(value[Symbol.toStringTag]));
+    }
+    get type() {
+        return __classPrivateFieldGet(this, _Blob_type, "f");
+    }
+    get size() {
+        return __classPrivateFieldGet(this, _Blob_size, "f");
+    }
+    slice(start, end, contentType) {
+        return new Blob((0, blobHelpers_1.sliceBlob)(__classPrivateFieldGet(this, _Blob_parts, "f"), this.size, start, end), {
+            type: contentType
+        });
+    }
+    async text() {
+        const decoder = new TextDecoder();
+        let result = "";
+        for await (const chunk of (0, blobHelpers_1.consumeBlobParts)(__classPrivateFieldGet(this, _Blob_parts, "f"))) {
+            result += decoder.decode(chunk, { stream: true });
+        }
+        result += decoder.decode();
+        return result;
+    }
+    async arrayBuffer() {
+        const view = new Uint8Array(this.size);
+        let offset = 0;
+        for await (const chunk of (0, blobHelpers_1.consumeBlobParts)(__classPrivateFieldGet(this, _Blob_parts, "f"))) {
+            view.set(chunk, offset);
+            offset += chunk.length;
+        }
+        return view.buffer;
+    }
+    stream() {
+        const iterator = (0, blobHelpers_1.consumeBlobParts)(__classPrivateFieldGet(this, _Blob_parts, "f"), true);
+        return new web_streams_polyfill_1.ReadableStream({
+            async pull(controller) {
+                const { value, done } = await iterator.next();
+                if (done) {
+                    return queueMicrotask(() => controller.close());
+                }
+                controller.enqueue(value);
+            },
+            async cancel() {
+                await iterator.return();
+            }
+        });
+    }
+    get [Symbol.toStringTag]() {
+        return "Blob";
+    }
+}
+exports.Blob = Blob;
+Object.defineProperties(Blob.prototype, {
+    type: { enumerable: true },
+    size: { enumerable: true },
+    slice: { enumerable: true },
+    stream: { enumerable: true },
+    text: { enumerable: true },
+    arrayBuffer: { enumerable: true }
+});
+
+
+/***/ }),
+
+/***/ 3637:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _File_name, _File_lastModified;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.File = void 0;
+const Blob_1 = __nccwpck_require__(6637);
+class File extends Blob_1.Blob {
+    constructor(fileBits, name, options = {}) {
+        super(fileBits, options);
+        _File_name.set(this, void 0);
+        _File_lastModified.set(this, 0);
+        if (arguments.length < 2) {
+            throw new TypeError("Failed to construct 'File': 2 arguments required, "
+                + `but only ${arguments.length} present.`);
+        }
+        __classPrivateFieldSet(this, _File_name, String(name), "f");
+        const lastModified = options.lastModified === undefined
+            ? Date.now()
+            : Number(options.lastModified);
+        if (!Number.isNaN(lastModified)) {
+            __classPrivateFieldSet(this, _File_lastModified, lastModified, "f");
+        }
+    }
+    static [(_File_name = new WeakMap(), _File_lastModified = new WeakMap(), Symbol.hasInstance)](value) {
+        return value instanceof Blob_1.Blob
+            && value[Symbol.toStringTag] === "File"
+            && typeof value.name === "string";
+    }
+    get name() {
+        return __classPrivateFieldGet(this, _File_name, "f");
+    }
+    get lastModified() {
+        return __classPrivateFieldGet(this, _File_lastModified, "f");
+    }
+    get webkitRelativePath() {
+        return "";
+    }
+    get [Symbol.toStringTag]() {
+        return "File";
+    }
+}
+exports.File = File;
+
+
+/***/ }),
+
+/***/ 7268:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _FormData_instances, _FormData_entries, _FormData_setEntry;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.FormData = void 0;
+const util_1 = __nccwpck_require__(3837);
+const File_1 = __nccwpck_require__(3637);
+const isFile_1 = __nccwpck_require__(4529);
+const isBlob_1 = __nccwpck_require__(5493);
+const isFunction_1 = __nccwpck_require__(4245);
+const deprecateConstructorEntries_1 = __nccwpck_require__(2689);
+class FormData {
+    constructor(entries) {
+        _FormData_instances.add(this);
+        _FormData_entries.set(this, new Map());
+        if (entries) {
+            (0, deprecateConstructorEntries_1.deprecateConstructorEntries)();
+            entries.forEach(({ name, value, fileName }) => this.append(name, value, fileName));
+        }
+    }
+    static [(_FormData_entries = new WeakMap(), _FormData_instances = new WeakSet(), Symbol.hasInstance)](value) {
+        return Boolean(value
+            && (0, isFunction_1.isFunction)(value.constructor)
+            && value[Symbol.toStringTag] === "FormData"
+            && (0, isFunction_1.isFunction)(value.append)
+            && (0, isFunction_1.isFunction)(value.set)
+            && (0, isFunction_1.isFunction)(value.get)
+            && (0, isFunction_1.isFunction)(value.getAll)
+            && (0, isFunction_1.isFunction)(value.has)
+            && (0, isFunction_1.isFunction)(value.delete)
+            && (0, isFunction_1.isFunction)(value.entries)
+            && (0, isFunction_1.isFunction)(value.values)
+            && (0, isFunction_1.isFunction)(value.keys)
+            && (0, isFunction_1.isFunction)(value[Symbol.iterator])
+            && (0, isFunction_1.isFunction)(value.forEach));
+    }
+    append(name, value, fileName) {
+        __classPrivateFieldGet(this, _FormData_instances, "m", _FormData_setEntry).call(this, {
+            name,
+            fileName,
+            append: true,
+            rawValue: value,
+            argsLength: arguments.length
+        });
+    }
+    set(name, value, fileName) {
+        __classPrivateFieldGet(this, _FormData_instances, "m", _FormData_setEntry).call(this, {
+            name,
+            fileName,
+            append: false,
+            rawValue: value,
+            argsLength: arguments.length
+        });
+    }
+    get(name) {
+        const field = __classPrivateFieldGet(this, _FormData_entries, "f").get(String(name));
+        if (!field) {
+            return null;
+        }
+        return field[0];
+    }
+    getAll(name) {
+        const field = __classPrivateFieldGet(this, _FormData_entries, "f").get(String(name));
+        if (!field) {
+            return [];
+        }
+        return field.slice();
+    }
+    has(name) {
+        return __classPrivateFieldGet(this, _FormData_entries, "f").has(String(name));
+    }
+    delete(name) {
+        __classPrivateFieldGet(this, _FormData_entries, "f").delete(String(name));
+    }
+    *keys() {
+        for (const key of __classPrivateFieldGet(this, _FormData_entries, "f").keys()) {
+            yield key;
+        }
+    }
+    *entries() {
+        for (const name of this.keys()) {
+            const values = this.getAll(name);
+            for (const value of values) {
+                yield [name, value];
+            }
+        }
+    }
+    *values() {
+        for (const [, value] of this) {
+            yield value;
+        }
+    }
+    [(_FormData_setEntry = function _FormData_setEntry({ name, rawValue, append, fileName, argsLength }) {
+        const methodName = append ? "append" : "set";
+        if (argsLength < 2) {
+            throw new TypeError(`Failed to execute '${methodName}' on 'FormData': `
+                + `2 arguments required, but only ${argsLength} present.`);
+        }
+        name = String(name);
+        let value;
+        if ((0, isFile_1.isFile)(rawValue)) {
+            value = fileName === undefined
+                ? rawValue
+                : new File_1.File([rawValue], fileName, {
+                    type: rawValue.type,
+                    lastModified: rawValue.lastModified
+                });
+        }
+        else if ((0, isBlob_1.isBlob)(rawValue)) {
+            value = new File_1.File([rawValue], fileName === undefined ? "blob" : fileName, {
+                type: rawValue.type
+            });
+        }
+        else if (fileName) {
+            throw new TypeError(`Failed to execute '${methodName}' on 'FormData': `
+                + "parameter 2 is not of type 'Blob'.");
+        }
+        else {
+            value = String(rawValue);
+        }
+        const values = __classPrivateFieldGet(this, _FormData_entries, "f").get(name);
+        if (!values) {
+            return void __classPrivateFieldGet(this, _FormData_entries, "f").set(name, [value]);
+        }
+        if (!append) {
+            return void __classPrivateFieldGet(this, _FormData_entries, "f").set(name, [value]);
+        }
+        values.push(value);
+    }, Symbol.iterator)]() {
+        return this.entries();
+    }
+    forEach(callback, thisArg) {
+        for (const [name, value] of this) {
+            callback.call(thisArg, value, name, this);
+        }
+    }
+    get [Symbol.toStringTag]() {
+        return "FormData";
+    }
+    [util_1.inspect.custom]() {
+        return this[Symbol.toStringTag];
+    }
+}
+exports.FormData = FormData;
+
+
+/***/ }),
+
+/***/ 7058:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/*! Based on fetch-blob. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> & David Frank */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.sliceBlob = exports.consumeBlobParts = void 0;
+const isFunction_1 = __nccwpck_require__(4245);
+const CHUNK_SIZE = 65536;
+async function* clonePart(part) {
+    const end = part.byteOffset + part.byteLength;
+    let position = part.byteOffset;
+    while (position !== end) {
+        const size = Math.min(end - position, CHUNK_SIZE);
+        const chunk = part.buffer.slice(position, position + size);
+        position += chunk.byteLength;
+        yield new Uint8Array(chunk);
+    }
+}
+async function* consumeNodeBlob(blob) {
+    let position = 0;
+    while (position !== blob.size) {
+        const chunk = blob.slice(position, Math.min(blob.size, position + CHUNK_SIZE));
+        const buffer = await chunk.arrayBuffer();
+        position += buffer.byteLength;
+        yield new Uint8Array(buffer);
+    }
+}
+async function* consumeBlobParts(parts, clone = false) {
+    for (const part of parts) {
+        if (ArrayBuffer.isView(part)) {
+            if (clone) {
+                yield* clonePart(part);
+            }
+            else {
+                yield part;
+            }
+        }
+        else if ((0, isFunction_1.isFunction)(part.stream)) {
+            yield* part.stream();
+        }
+        else {
+            yield* consumeNodeBlob(part);
+        }
+    }
+}
+exports.consumeBlobParts = consumeBlobParts;
+function* sliceBlob(blobParts, blobSize, start = 0, end) {
+    end !== null && end !== void 0 ? end : (end = blobSize);
+    let relativeStart = start < 0
+        ? Math.max(blobSize + start, 0)
+        : Math.min(start, blobSize);
+    let relativeEnd = end < 0
+        ? Math.max(blobSize + end, 0)
+        : Math.min(end, blobSize);
+    const span = Math.max(relativeEnd - relativeStart, 0);
+    let added = 0;
+    for (const part of blobParts) {
+        if (added >= span) {
+            break;
+        }
+        const partSize = ArrayBuffer.isView(part) ? part.byteLength : part.size;
+        if (relativeStart && partSize <= relativeStart) {
+            relativeStart -= partSize;
+            relativeEnd -= partSize;
+        }
+        else {
+            let chunk;
+            if (ArrayBuffer.isView(part)) {
+                chunk = part.subarray(relativeStart, Math.min(partSize, relativeEnd));
+                added += chunk.byteLength;
+            }
+            else {
+                chunk = part.slice(relativeStart, Math.min(partSize, relativeEnd));
+                added += chunk.size;
+            }
+            relativeEnd -= partSize;
+            relativeStart = 0;
+            yield chunk;
+        }
+    }
+}
+exports.sliceBlob = sliceBlob;
+
+
+/***/ }),
+
+/***/ 2689:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.deprecateConstructorEntries = void 0;
+const util_1 = __nccwpck_require__(3837);
+exports.deprecateConstructorEntries = (0, util_1.deprecate)(() => { }, "Constructor \"entries\" argument is not spec-compliant "
+    + "and will be removed in next major release.");
+
+
+/***/ }),
+
+/***/ 880:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(7268), exports);
+__exportStar(__nccwpck_require__(6637), exports);
+__exportStar(__nccwpck_require__(3637), exports);
+
+
+/***/ }),
+
+/***/ 5493:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isBlob = void 0;
+const Blob_1 = __nccwpck_require__(6637);
+const isBlob = (value) => value instanceof Blob_1.Blob;
+exports.isBlob = isBlob;
+
+
+/***/ }),
+
+/***/ 4529:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isFile = void 0;
+const File_1 = __nccwpck_require__(3637);
+const isFile = (value) => value instanceof File_1.File;
+exports.isFile = isFile;
+
+
+/***/ }),
+
+/***/ 4245:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isFunction = void 0;
+const isFunction = (value) => (typeof value === "function");
+exports.isFunction = isFunction;
+
+
+/***/ }),
+
+/***/ 708:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -24819,307 +21994,38 @@ module.exports = require("zlib");
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-var coreAuth = __nccwpck_require__(9645);
 var tslib = __nccwpck_require__(4351);
-var coreClient = __nccwpck_require__(4579);
-var logger$1 = __nccwpck_require__(3233);
-var coreLro = __nccwpck_require__(7094);
 
 // Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-/**
- * The OpenAIKeyCredential class represents an OpenAI API key
- * and is used to authenticate into an OpenAI client for
- * an OpenAI endpoint.
- */
-class OpenAIKeyCredential {
-    /**
-     * Create an instance of an AzureKeyCredential for use
-     * with a service client.
-     *
-     * @param key - The initial value of the key to use in authentication
-     */
-    constructor(key) {
-        if (!key) {
-            throw new Error("key must be a non-empty string");
-        }
-        this._key = createKey(key);
-    }
-    /**
-     * The value of the key to be used in authentication
-     */
-    get key() {
-        return this._key;
-    }
-    /**
-     * Change the value of the key.
-     *
-     * Updates will take effect upon the next request after
-     * updating the key value.
-     *
-     * @param newKey - The new key value to be used
-     */
-    update(newKey) {
-        this._key = createKey(newKey);
-    }
+function iterateSseStream(chunkIter) {
+    return toMessage(toLine(ensureAsyncIterable(chunkIter)));
 }
-function createKey(key) {
-    return key.startsWith("Bearer ") ? key : `Bearer ${key}`;
+function ensureAsyncIterable(chunkIter) {
+    return isReadableStream(chunkIter) && chunkIter[Symbol.asyncIterator] === undefined
+        ? toAsyncIterable(chunkIter)
+        : chunkIter;
 }
-
-// Copyright (c) Microsoft Corporation.
-const logger = logger$1.createClientLogger("openai");
-
-// Copyright (c) Microsoft Corporation.
-/**
- * Initialize a new instance of `OpenAIContext`
- * @param endpoint - Supported Cognitive Services endpoints (protocol and hostname, for example:
- * https://westus.api.cognitive.microsoft.com).
- * @param credentials - uniquely identify client credential
- * @param options - the parameter for all optional parameters
- */
-function createClient(endpoint, credentials, options = {}) {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
-    const baseUrl = (_a = options.baseUrl) !== null && _a !== void 0 ? _a : `${endpoint}/openai`;
-    options.apiVersion = (_b = options.apiVersion) !== null && _b !== void 0 ? _b : "2023-08-01-preview";
-    options = Object.assign(Object.assign({}, options), { credentials: {
-            scopes: (_d = (_c = options.credentials) === null || _c === void 0 ? void 0 : _c.scopes) !== null && _d !== void 0 ? _d : ["https://cognitiveservices.azure.com/.default"],
-            apiKeyHeaderName: (_f = (_e = options.credentials) === null || _e === void 0 ? void 0 : _e.apiKeyHeaderName) !== null && _f !== void 0 ? _f : "api-key",
-        } });
-    const userAgentInfo = `azsdk-js-openai-rest/1.0.0-beta.5`;
-    const userAgentPrefix = options.userAgentOptions && options.userAgentOptions.userAgentPrefix
-        ? `${options.userAgentOptions.userAgentPrefix} ${userAgentInfo}`
-        : `${userAgentInfo}`;
-    options = Object.assign(Object.assign({}, options), { userAgentOptions: {
-            userAgentPrefix,
-        }, loggingOptions: {
-            logger: (_h = (_g = options.loggingOptions) === null || _g === void 0 ? void 0 : _g.logger) !== null && _h !== void 0 ? _h : logger.info,
-        } });
-    const client = coreClient.getClient(baseUrl, credentials, options);
-    return client;
+function isReadableStream(body) {
+    return Boolean(body &&
+        typeof body.getReader === "function" &&
+        typeof body.tee === "function");
 }
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-const responseMap = {
-    "POST /deployments/{deploymentId}/embeddings": ["200"],
-    "POST /deployments/{deploymentId}/completions": ["200"],
-    "POST /deployments/{deploymentId}/chat/completions": ["200"],
-    "POST /deployments/{deploymentId}/extensions/chat/completions": ["200"],
-    "GET /operations/images/{operationId}": ["200"],
-    "POST /images/generations:submit": ["202"],
-    "GET /images/generations:submit": ["200", "202"],
-};
-function isUnexpected(response) {
-    const lroOriginal = response.headers["x-ms-original-url"];
-    const url = new URL(lroOriginal !== null && lroOriginal !== void 0 ? lroOriginal : response.request.url);
-    const method = response.request.method;
-    let pathDetails = responseMap[`${method} ${url.pathname}`];
-    if (!pathDetails) {
-        pathDetails = getParametrizedPathSuccess(method, url.pathname);
-    }
-    return !pathDetails.includes(response.status);
-}
-function getParametrizedPathSuccess(method, path) {
-    var _a, _b, _c, _d;
-    const pathParts = path.split("/");
-    // Traverse list to match the longest candidate
-    // matchedLen: the length of candidate path
-    // matchedValue: the matched status code array
-    let matchedLen = -1, matchedValue = [];
-    // Iterate the responseMap to find a match
-    for (const [key, value] of Object.entries(responseMap)) {
-        // Extracting the path from the map key which is in format
-        // GET /path/foo
-        if (!key.startsWith(method)) {
-            continue;
-        }
-        const candidatePath = getPathFromMapKey(key);
-        // Get each part of the url path
-        const candidateParts = candidatePath.split("/");
-        // track if we have found a match to return the values found.
-        let found = true;
-        for (let i = candidateParts.length - 1, j = pathParts.length - 1; i >= 1 && j >= 1; i--, j--) {
-            if (((_a = candidateParts[i]) === null || _a === void 0 ? void 0 : _a.startsWith("{")) && ((_b = candidateParts[i]) === null || _b === void 0 ? void 0 : _b.indexOf("}")) !== -1) {
-                const start = candidateParts[i].indexOf("}") + 1, end = (_c = candidateParts[i]) === null || _c === void 0 ? void 0 : _c.length;
-                // If the current part of the candidate is a "template" part
-                // Try to use the suffix of pattern to match the path
-                // {guid} ==> $
-                // {guid}:export ==> :export$
-                const isMatched = new RegExp(`${(_d = candidateParts[i]) === null || _d === void 0 ? void 0 : _d.slice(start, end)}`).test(pathParts[j] || "");
-                if (!isMatched) {
-                    found = false;
-                    break;
+function toAsyncIterable(stream) {
+    return tslib.__asyncGenerator(this, arguments, function* toAsyncIterable_1() {
+        const reader = stream.getReader();
+        try {
+            while (true) {
+                const { value, done } = yield tslib.__await(reader.read());
+                if (done) {
+                    return yield tslib.__await(void 0);
                 }
-                continue;
-            }
-            // If the candidate part is not a template and
-            // the parts don't match mark the candidate as not found
-            // to move on with the next candidate path.
-            if (candidateParts[i] !== pathParts[j]) {
-                found = false;
-                break;
+                yield yield tslib.__await(value);
             }
         }
-        // We finished evaluating the current candidate parts
-        // Update the matched value if and only if we found the longer pattern
-        if (found && candidatePath.length > matchedLen) {
-            matchedLen = candidatePath.length;
-            matchedValue = value;
+        finally {
+            reader.releaseLock();
         }
-    }
-    return matchedValue;
-}
-function getPathFromMapKey(mapKey) {
-    const pathStart = mapKey.indexOf("/");
-    return mapKey.slice(pathStart);
-}
-
-// Copyright (c) Microsoft Corporation.
-async function getLongRunningPoller(client, initialResponse, options = {}) {
-    var _a;
-    const poller = {
-        requestMethod: initialResponse.request.method,
-        requestPath: initialResponse.request.url,
-        sendInitialRequest: async () => {
-            // In the case of Rest Clients we are building the LRO poller object from a response that's the reason
-            // we are not triggering the initial request here, just extracting the information from the
-            // response we were provided.
-            return getLroResponse(initialResponse);
-        },
-        sendPollRequest: async (path) => {
-            // This is the callback that is going to be called to poll the service
-            // to get the latest status. We use the client provided and the polling path
-            // which is an opaque URL provided by caller, the service sends this in one of the following headers: operation-location, azure-asyncoperation or location
-            // depending on the lro pattern that the service implements. If non is provided we default to the initial path.
-            const response = await client.pathUnchecked(path !== null && path !== void 0 ? path : initialResponse.request.url).get();
-            const lroResponse = getLroResponse(response);
-            lroResponse.rawResponse.headers["x-ms-original-url"] = initialResponse.request.url;
-            return lroResponse;
-        },
-    };
-    options.resolveOnUnsuccessful = (_a = options.resolveOnUnsuccessful) !== null && _a !== void 0 ? _a : true;
-    return coreLro.createHttpPoller(poller, options);
-}
-/**
- * Converts a Rest Client response to a response that the LRO implementation understands
- * @param response - a rest client http response
- * @returns - An LRO response that the LRO implementation understands
- */
-function getLroResponse(response) {
-    if (Number.isNaN(response.status)) {
-        throw new TypeError(`Status code of the response is not a number. Value: ${response.status}`);
-    }
-    return {
-        flatResponse: response,
-        rawResponse: Object.assign(Object.assign({}, response), { statusCode: Number.parseInt(response.status), body: response.body }),
-    };
-}
-
-// Copyright (c) Microsoft Corporation.
-/** Azure OpenAI APIs for completions and search */
-function createOpenAI(endpoint, credential, options = {}) {
-    const baseUrl = endpoint;
-    const clientContext = createClient(baseUrl, credential, options);
-    return clientContext;
-}
-
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-function getCompletionsResult(body) {
-    var _a;
-    return Object.assign(Object.assign({ id: body["id"], created: new Date(body["created"]) }, (!body["prompt_annotations"]
-        ? {}
-        : {
-            promptFilterResults: body["prompt_annotations"].map((p) => (Object.assign({ promptIndex: p["prompt_index"] }, (!p.content_filter_results
-                ? {}
-                : {
-                    contentFilterResults: deserializeContentFilter(p.content_filter_results),
-                })))),
-        })), { choices: ((_a = body["choices"]) !== null && _a !== void 0 ? _a : []).map((p) => (Object.assign(Object.assign({ text: p["text"], index: p["index"] }, (!p.content_filter_results
-            ? {}
-            : {
-                contentFilterResults: deserializeContentFilter(p.content_filter_results),
-            })), { logprobs: p.logprobs === null
-                ? null
-                : {
-                    tokens: p.logprobs["tokens"],
-                    tokenLogprobs: p.logprobs["token_logprobs"],
-                    topLogprobs: p.logprobs["top_logprobs"],
-                    textOffset: p.logprobs["text_offset"],
-                }, finishReason: p["finish_reason"] }))) });
-}
-function getChatCompletionsResult(body) {
-    var _a;
-    return Object.assign({ id: body["id"], created: new Date(body["created"]), choices: ((_a = body["choices"]) !== null && _a !== void 0 ? _a : []).map((p) => (Object.assign(Object.assign(Object.assign(Object.assign({}, (!p.message ? {} : { message: _deserializeMessage(p.message) })), { index: p["index"], finishReason: p["finish_reason"] }), (!p.delta ? {} : { delta: _deserializeMessage(p.delta) })), (!p.content_filter_results
-            ? {}
-            : { contentFilterResults: deserializeContentFilter(p.content_filter_results) })))) }, (!body["prompt_annotations"]
-        ? {}
-        : {
-            promptFilterResults: body["prompt_annotations"].map((p) => (Object.assign({ promptIndex: p["prompt_index"] }, (!p.content_filter_results
-                ? {}
-                : {
-                    contentFilterResults: deserializeContentFilter(p.content_filter_results),
-                })))),
-        }));
-}
-function _deserializeMessage(message) {
-    var _a, _b;
-    return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, (!message["role"] ? {} : { role: message["role"] })), (!message["content"] ? {} : { content: message["content"] })), (!message["name"] ? {} : { name: message["name"] })), (!message.function_call
-        ? {}
-        : {
-            functionCall: {
-                name: (_a = message.function_call) === null || _a === void 0 ? void 0 : _a["name"],
-                arguments: (_b = message.function_call) === null || _b === void 0 ? void 0 : _b["arguments"],
-            },
-        })), (!message.context
-        ? {}
-        : {
-            context: Object.assign({}, (!message.context.messages
-                ? {}
-                : {
-                    messages: message.context.messages.map((m) => {
-                        return _deserializeMessage(m);
-                    }),
-                })),
-        }));
-}
-function deserializeContentFilter(result) {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
-    return Object.assign(Object.assign(Object.assign(Object.assign({}, (!result.sexual
-        ? {}
-        : {
-            sexual: {
-                severity: (_a = result.sexual) === null || _a === void 0 ? void 0 : _a["severity"],
-                filtered: (_b = result.sexual) === null || _b === void 0 ? void 0 : _b["filtered"],
-            },
-        })), (!result.violence
-        ? {}
-        : {
-            violence: {
-                severity: (_c = result.violence) === null || _c === void 0 ? void 0 : _c["severity"],
-                filtered: (_d = result.violence) === null || _d === void 0 ? void 0 : _d["filtered"],
-            },
-        })), (!result.hate
-        ? {}
-        : {
-            hate: {
-                severity: (_e = result.hate) === null || _e === void 0 ? void 0 : _e["severity"],
-                filtered: (_f = result.hate) === null || _f === void 0 ? void 0 : _f["filtered"],
-            },
-        })), (!result.self_harm
-        ? {}
-        : {
-            selfHarm: {
-                severity: (_g = result.self_harm) === null || _g === void 0 ? void 0 : _g["severity"],
-                filtered: (_h = result.self_harm) === null || _h === void 0 ? void 0 : _h["filtered"],
-            },
-        }));
-}
-
-// Copyright (c) Microsoft Corporation.
-function toSSE(chunkIter) {
-    return toMessage(toLine(chunkIter));
+    });
 }
 function concatBuffer(a, b) {
     const res = new Uint8Array(a.length + b.length);
@@ -25274,16 +22180,352 @@ function toMessage(lineIter) {
     });
 }
 
-// Copyright (c) Microsoft Corporation.
-async function getSSEs(response) {
-    const chunkIterator = await getStream(response);
-    return toSSE(chunkIterator);
+exports.iterateSseStream = iterateSseStream;
+//# sourceMappingURL=index.cjs.map
+
+
+/***/ }),
+
+/***/ 8946:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+var coreAuth = __nccwpck_require__(9645);
+var tslib = __nccwpck_require__(4351);
+var coreRestPipeline = __nccwpck_require__(8121);
+var formdataNode = __nccwpck_require__(880);
+var node_stream = __nccwpck_require__(4492);
+var coreClient = __nccwpck_require__(4579);
+var coreSse = __nccwpck_require__(708);
+var coreLro = __nccwpck_require__(7094);
+var logger$1 = __nccwpck_require__(3233);
+
+function _interopNamespace(e) {
+    if (e && e.__esModule) return e;
+    var n = Object.create(null);
+    if (e) {
+        Object.keys(e).forEach(function (k) {
+            if (k !== 'default') {
+                var d = Object.getOwnPropertyDescriptor(e, k);
+                Object.defineProperty(n, k, d.get ? d : {
+                    enumerable: true,
+                    get: function () { return e[k]; }
+                });
+            }
+        });
+    }
+    n["default"] = e;
+    return Object.freeze(n);
 }
-async function getStream(response) {
-    const stream = (await response.asNodeStream()).body;
-    if (!stream)
-        throw new Error("No stream found in response. Did you enable the stream option?");
-    return stream;
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+/**
+ * The OpenAIKeyCredential class represents an OpenAI API key
+ * and is used to authenticate into an OpenAI client for
+ * an OpenAI endpoint.
+ */
+class OpenAIKeyCredential {
+    /**
+     * Create an instance of an AzureKeyCredential for use
+     * with a service client.
+     *
+     * @param key - The initial value of the key to use in authentication
+     */
+    constructor(key) {
+        if (!key) {
+            throw new Error("key must be a non-empty string");
+        }
+        this._key = createKey(key);
+    }
+    /**
+     * The value of the key to be used in authentication
+     */
+    get key() {
+        return this._key;
+    }
+    /**
+     * Change the value of the key.
+     *
+     * Updates will take effect upon the next request after
+     * updating the key value.
+     *
+     * @param newKey - The new key value to be used
+     */
+    update(newKey) {
+        this._key = createKey(newKey);
+    }
+}
+function createKey(key) {
+    return key.startsWith("Bearer ") ? key : `Bearer ${key}`;
+}
+
+// Copyright (c) Microsoft Corporation.
+const logger = logger$1.createClientLogger("openai");
+
+// Copyright (c) Microsoft Corporation.
+/**
+ * Initialize a new instance of `OpenAIContext`
+ * @param endpoint - Supported Cognitive Services endpoints (protocol and hostname, for example:
+ * https://westus.api.cognitive.microsoft.com).
+ * @param credentials - uniquely identify client credential
+ * @param options - the parameter for all optional parameters
+ */
+function createClient(endpoint, credentials, options = {}) {
+    var _a, _b, _c, _d, _e, _f, _g, _h;
+    const baseUrl = (_a = options.baseUrl) !== null && _a !== void 0 ? _a : `${endpoint}/openai`;
+    options.apiVersion = (_b = options.apiVersion) !== null && _b !== void 0 ? _b : "2023-09-01-preview";
+    options = Object.assign(Object.assign({}, options), { credentials: {
+            scopes: (_d = (_c = options.credentials) === null || _c === void 0 ? void 0 : _c.scopes) !== null && _d !== void 0 ? _d : ["https://cognitiveservices.azure.com/.default"],
+            apiKeyHeaderName: (_f = (_e = options.credentials) === null || _e === void 0 ? void 0 : _e.apiKeyHeaderName) !== null && _f !== void 0 ? _f : "api-key",
+        } });
+    const userAgentInfo = `azsdk-js-openai-rest/1.0.0-beta.6`;
+    const userAgentPrefix = options.userAgentOptions && options.userAgentOptions.userAgentPrefix
+        ? `${options.userAgentOptions.userAgentPrefix} ${userAgentInfo}`
+        : `${userAgentInfo}`;
+    options = Object.assign(Object.assign({}, options), { userAgentOptions: {
+            userAgentPrefix,
+        }, loggingOptions: {
+            logger: (_h = (_g = options.loggingOptions) === null || _g === void 0 ? void 0 : _g.logger) !== null && _h !== void 0 ? _h : logger.info,
+        } });
+    const client = coreClient.getClient(baseUrl, credentials, options);
+    return client;
+}
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+const responseMap = {
+    "POST /deployments/{deploymentId}/embeddings": ["200"],
+    "POST /deployments/{deploymentId}/completions": ["200"],
+    "POST /deployments/{deploymentId}/chat/completions": ["200"],
+    "POST /deployments/{deploymentId}/extensions/chat/completions": ["200"],
+    "GET /operations/images/{operationId}": ["200"],
+    "POST /images/generations:submit": ["202"],
+    "GET /images/generations:submit": ["200", "202"],
+};
+function isUnexpected(response) {
+    const lroOriginal = response.headers["x-ms-original-url"];
+    const url = new URL(lroOriginal !== null && lroOriginal !== void 0 ? lroOriginal : response.request.url);
+    const method = response.request.method;
+    let pathDetails = responseMap[`${method} ${url.pathname}`];
+    if (!pathDetails) {
+        pathDetails = getParametrizedPathSuccess(method, url.pathname);
+    }
+    return !pathDetails.includes(response.status);
+}
+function getParametrizedPathSuccess(method, path) {
+    var _a, _b, _c, _d;
+    const pathParts = path.split("/");
+    // Traverse list to match the longest candidate
+    // matchedLen: the length of candidate path
+    // matchedValue: the matched status code array
+    let matchedLen = -1, matchedValue = [];
+    // Iterate the responseMap to find a match
+    for (const [key, value] of Object.entries(responseMap)) {
+        // Extracting the path from the map key which is in format
+        // GET /path/foo
+        if (!key.startsWith(method)) {
+            continue;
+        }
+        const candidatePath = getPathFromMapKey(key);
+        // Get each part of the url path
+        const candidateParts = candidatePath.split("/");
+        // track if we have found a match to return the values found.
+        let found = true;
+        for (let i = candidateParts.length - 1, j = pathParts.length - 1; i >= 1 && j >= 1; i--, j--) {
+            if (((_a = candidateParts[i]) === null || _a === void 0 ? void 0 : _a.startsWith("{")) && ((_b = candidateParts[i]) === null || _b === void 0 ? void 0 : _b.indexOf("}")) !== -1) {
+                const start = candidateParts[i].indexOf("}") + 1, end = (_c = candidateParts[i]) === null || _c === void 0 ? void 0 : _c.length;
+                // If the current part of the candidate is a "template" part
+                // Try to use the suffix of pattern to match the path
+                // {guid} ==> $
+                // {guid}:export ==> :export$
+                const isMatched = new RegExp(`${(_d = candidateParts[i]) === null || _d === void 0 ? void 0 : _d.slice(start, end)}`).test(pathParts[j] || "");
+                if (!isMatched) {
+                    found = false;
+                    break;
+                }
+                continue;
+            }
+            // If the candidate part is not a template and
+            // the parts don't match mark the candidate as not found
+            // to move on with the next candidate path.
+            if (candidateParts[i] !== pathParts[j]) {
+                found = false;
+                break;
+            }
+        }
+        // We finished evaluating the current candidate parts
+        // Update the matched value if and only if we found the longer pattern
+        if (found && candidatePath.length > matchedLen) {
+            matchedLen = candidatePath.length;
+            matchedValue = value;
+        }
+    }
+    return matchedValue;
+}
+function getPathFromMapKey(mapKey) {
+    const pathStart = mapKey.indexOf("/");
+    return mapKey.slice(pathStart);
+}
+
+// Copyright (c) Microsoft Corporation.
+async function getLongRunningPoller(client, initialResponse, options = {}) {
+    var _a;
+    const poller = {
+        requestMethod: initialResponse.request.method,
+        requestPath: initialResponse.request.url,
+        sendInitialRequest: async () => {
+            // In the case of Rest Clients we are building the LRO poller object from a response that's the reason
+            // we are not triggering the initial request here, just extracting the information from the
+            // response we were provided.
+            return getLroResponse(initialResponse);
+        },
+        sendPollRequest: async (path) => {
+            // This is the callback that is going to be called to poll the service
+            // to get the latest status. We use the client provided and the polling path
+            // which is an opaque URL provided by caller, the service sends this in one of the following headers: operation-location, azure-asyncoperation or location
+            // depending on the lro pattern that the service implements. If non is provided we default to the initial path.
+            const response = await client.pathUnchecked(path !== null && path !== void 0 ? path : initialResponse.request.url).get();
+            const lroResponse = getLroResponse(response);
+            lroResponse.rawResponse.headers["x-ms-original-url"] = initialResponse.request.url;
+            return lroResponse;
+        },
+    };
+    options.resolveOnUnsuccessful = (_a = options.resolveOnUnsuccessful) !== null && _a !== void 0 ? _a : true;
+    return coreLro.createHttpPoller(poller, options);
+}
+/**
+ * Converts a Rest Client response to a response that the LRO implementation understands
+ * @param response - a rest client http response
+ * @returns - An LRO response that the LRO implementation understands
+ */
+function getLroResponse(response) {
+    if (Number.isNaN(response.status)) {
+        throw new TypeError(`Status code of the response is not a number. Value: ${response.status}`);
+    }
+    return {
+        flatResponse: response,
+        rawResponse: Object.assign(Object.assign({}, response), { statusCode: Number.parseInt(response.status), body: response.body }),
+    };
+}
+
+// Copyright (c) Microsoft Corporation.
+/** Azure OpenAI APIs for completions and search */
+function createOpenAI(endpoint, credential, options = {}) {
+    const baseUrl = endpoint;
+    const clientContext = createClient(baseUrl, credential, options);
+    return clientContext;
+}
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+function getPromptFilterResult(body) {
+    var _a;
+    const res = (_a = body["prompt_annotations"]) !== null && _a !== void 0 ? _a : body["prompt_filter_results"];
+    return !res
+        ? {}
+        : {
+            promptFilterResults: res.map((p) => (Object.assign({ promptIndex: p["prompt_index"] }, (!p.content_filter_results
+                ? {}
+                : {
+                    contentFilterResults: deserializeContentFilter(p.content_filter_results),
+                })))),
+        };
+}
+function getCompletionsResult(body) {
+    var _a;
+    return Object.assign(Object.assign({ id: body["id"], created: new Date(body["created"]) }, getPromptFilterResult(body)), { choices: ((_a = body["choices"]) !== null && _a !== void 0 ? _a : []).map((p) => (Object.assign(Object.assign({ text: p["text"], index: p["index"] }, (!p.content_filter_results
+            ? {}
+            : {
+                contentFilterResults: deserializeContentFilter(p.content_filter_results),
+            })), { logprobs: p.logprobs === null
+                ? null
+                : {
+                    tokens: p.logprobs["tokens"],
+                    tokenLogprobs: p.logprobs["token_logprobs"],
+                    topLogprobs: p.logprobs["top_logprobs"],
+                    textOffset: p.logprobs["text_offset"],
+                }, finishReason: p["finish_reason"] }))) });
+}
+function getChatCompletionsResult(body) {
+    var _a;
+    return Object.assign(Object.assign({ id: body["id"], created: new Date(body["created"]), choices: ((_a = body["choices"]) !== null && _a !== void 0 ? _a : []).map((p) => (Object.assign(Object.assign(Object.assign(Object.assign({}, (!p.message ? {} : { message: _deserializeMessage(p.message) })), { index: p["index"], finishReason: p["finish_reason"] }), (!p.delta ? {} : { delta: _deserializeMessage(p.delta) })), (!p.content_filter_results
+            ? {}
+            : { contentFilterResults: deserializeContentFilter(p.content_filter_results) })))) }, getPromptFilterResult(body)), (!body["usage"]
+        ? {}
+        : {
+            usage: {
+                completionTokens: body["usage"].completion_tokens,
+                promptTokens: body["usage"].prompt_tokens,
+                totalTokens: body["usage"].total_tokens,
+            },
+        }));
+}
+function _deserializeMessage(message) {
+    var _a, _b;
+    return Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, (!message["role"] ? {} : { role: message["role"] })), (!message["content"] ? {} : { content: message["content"] })), (!message["name"] ? {} : { name: message["name"] })), (!message.function_call
+        ? {}
+        : {
+            functionCall: {
+                name: (_a = message.function_call) === null || _a === void 0 ? void 0 : _a["name"],
+                arguments: (_b = message.function_call) === null || _b === void 0 ? void 0 : _b["arguments"],
+            },
+        })), (!message.context
+        ? {}
+        : {
+            context: Object.assign({}, (!message.context.messages
+                ? {}
+                : {
+                    messages: message.context.messages.map((m) => {
+                        return _deserializeMessage(m);
+                    }),
+                })),
+        }));
+}
+function deserializeContentFilter(result) {
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+    if (result.error) {
+        return {
+            error: {
+                code: result.error.code,
+                message: result.error.message,
+                details: (_a = result.error.details) !== null && _a !== void 0 ? _a : [],
+            },
+        };
+    }
+    return Object.assign(Object.assign(Object.assign(Object.assign({}, (!result.sexual
+        ? {}
+        : {
+            sexual: {
+                severity: (_b = result.sexual) === null || _b === void 0 ? void 0 : _b["severity"],
+                filtered: (_c = result.sexual) === null || _c === void 0 ? void 0 : _c["filtered"],
+            },
+        })), (!result.violence
+        ? {}
+        : {
+            violence: {
+                severity: (_d = result.violence) === null || _d === void 0 ? void 0 : _d["severity"],
+                filtered: (_e = result.violence) === null || _e === void 0 ? void 0 : _e["filtered"],
+            },
+        })), (!result.hate
+        ? {}
+        : {
+            hate: {
+                severity: (_f = result.hate) === null || _f === void 0 ? void 0 : _f["severity"],
+                filtered: (_g = result.hate) === null || _g === void 0 ? void 0 : _g["filtered"],
+            },
+        })), (!result.self_harm
+        ? {}
+        : {
+            selfHarm: {
+                severity: (_h = result.self_harm) === null || _h === void 0 ? void 0 : _h["severity"],
+                filtered: (_j = result.self_harm) === null || _j === void 0 ? void 0 : _j["filtered"],
+            },
+        }));
 }
 
 // Copyright (c) Microsoft Corporation.
@@ -25301,8 +22543,74 @@ function wrapError(f, message) {
         return result;
     }
     catch (cause) {
-        throw new Error(message, { cause });
+        throw new Error(`${message}: ${cause}`, { cause });
     }
+}
+function tocamelCase(str) {
+    return str.replace(/([_][a-z])/g, (group) => group.toUpperCase().replace("_", ""));
+}
+/**
+ * Rename keys to camel case.
+ * @param obj - The object to rename keys to camel case
+ * @returns The object with keys renamed to camel case
+ */
+function renameKeysToCamelCase(obj) {
+    for (const key of Object.keys(obj)) {
+        const value = obj[key];
+        const newKey = tocamelCase(key);
+        if (newKey !== key) {
+            delete obj[key];
+        }
+        obj[newKey] =
+            typeof value === "object"
+                ? Array.isArray(value)
+                    ? value.map((v) => renameKeysToCamelCase(v))
+                    : renameKeysToCamelCase(value)
+                : value;
+    }
+    return obj;
+}
+
+// Copyright (c) Microsoft Corporation.
+async function getSSEs(response) {
+    const chunkIterator = await getStream(response);
+    return coreSse.iterateSseStream(chunkIterator);
+}
+async function getStream(response) {
+    const { body, status } = await response.asNodeStream();
+    if (status !== "200" && body !== undefined) {
+        const text = await streamToText(body);
+        throw wrapError(() => JSON.parse(text).error, "Error parsing response body");
+    }
+    if (!body)
+        throw new Error("No stream found in response. Did you enable the stream option?");
+    return body;
+}
+function streamToText(stream) {
+    return new Promise((resolve, reject) => {
+        const buffer = [];
+        stream.on("data", (chunk) => {
+            if (Buffer.isBuffer(chunk)) {
+                buffer.push(chunk);
+            }
+            else {
+                buffer.push(Buffer.from(chunk));
+            }
+        });
+        stream.on("end", () => {
+            resolve(Buffer.concat(buffer).toString("utf8"));
+        });
+        stream.on("error", (e) => {
+            if (e && (e === null || e === void 0 ? void 0 : e.name) === "AbortError") {
+                reject(e);
+            }
+            else {
+                reject(new coreRestPipeline.RestError(`Error reading response as text: ${e.message}`, {
+                    code: coreRestPipeline.RestError.PARSE_ERROR,
+                }));
+            }
+        });
+    });
 }
 
 // Copyright (c) Microsoft Corporation.
@@ -25342,6 +22650,81 @@ function getOaiSSEs(response, toEvent) {
             finally { if (e_1) throw e_1.error; }
         }
     });
+}
+
+// Copyright (c) Microsoft Corporation.
+/**
+ * The programmatic identifier of the formDataPolicy.
+ */
+const formDataPolicyName = "formDataPolicyWithFileUpload";
+/**
+ * A policy that encodes FormData on the request into the body.
+ */
+function formDataWithFileUploadPolicy(boundary) {
+    return {
+        name: formDataPolicyName,
+        async sendRequest(request, next) {
+            if (request.formData) {
+                const contentType = request.headers.get("Content-Type");
+                if (contentType && contentType.indexOf("application/x-www-form-urlencoded") !== -1) {
+                    request.body = wwwFormUrlEncode(request.formData);
+                    request.formData = undefined;
+                }
+                else {
+                    await prepareFormData(request.formData, request, boundary);
+                }
+            }
+            return next(request);
+        },
+    };
+}
+function wwwFormUrlEncode(formData) {
+    const urlSearchParams = new URLSearchParams();
+    for (const [key, value] of Object.entries(formData)) {
+        if (Array.isArray(value)) {
+            for (const subValue of value) {
+                urlSearchParams.append(key, subValue.toString());
+            }
+        }
+        else {
+            urlSearchParams.append(key, value.toString());
+        }
+    }
+    return urlSearchParams.toString();
+}
+async function prepareFormData(formData, request, boundary) {
+    const requestForm = new formdataNode.FormData();
+    for (const formKey of Object.keys(formData)) {
+        const formValue = formData[formKey];
+        if (Array.isArray(formValue)) {
+            for (const subValue of formValue) {
+                requestForm.append(formKey, subValue);
+            }
+        }
+        else {
+            requestForm.append(formKey, formValue);
+        }
+    }
+    // This library doesn't define `type` entries in the exports section of its package.json.
+    // See https://github.com/microsoft/TypeScript/issues/52363
+    const { FormDataEncoder } = await Promise.resolve().then(function () { return /*#__PURE__*/_interopNamespace(__nccwpck_require__(8824)); });
+    const encoder = boundary
+        ? new FormDataEncoder(requestForm, boundary)
+        : new FormDataEncoder(requestForm);
+    const body = node_stream.Readable.from(encoder.encode());
+    request.body = body;
+    request.formData = undefined;
+    const contentType = request.headers.get("Content-Type");
+    if (contentType && contentType.indexOf("multipart/form-data") !== -1) {
+        request.headers.set("Content-Type", encoder.contentType);
+    }
+    const contentLength = encoder.contentLength;
+    if (contentLength !== undefined) {
+        request.headers.set("Content-Length", contentLength);
+    }
+}
+function createFile(data) {
+    return new formdataNode.File([data], "placeholder.wav");
 }
 
 // Copyright (c) Microsoft Corporation.
@@ -25492,7 +22875,7 @@ async function getCompletions(context, prompt, deploymentId, options = { request
 }
 function _getChatCompletionsSend(context, messages, deploymentId, options = { requestOptions: {} }) {
     return context.path("/deployments/{deploymentId}/chat/completions", deploymentId).post(Object.assign(Object.assign({}, coreClient.operationOptionsToRequestParameters(options)), { body: {
-            messages: messages,
+            messages: parseChatMessage(messages),
             functions: options === null || options === void 0 ? void 0 : options.functions,
             function_call: options === null || options === void 0 ? void 0 : options.functionCall,
             max_tokens: options === null || options === void 0 ? void 0 : options.maxTokens,
@@ -25513,7 +22896,7 @@ function _getChatCompletionsWithAzureExtensionsSend(context, messages, deploymen
     return context
         .path("/deployments/{deploymentId}/extensions/chat/completions", deploymentId)
         .post(Object.assign(Object.assign({}, coreClient.operationOptionsToRequestParameters(options)), { body: {
-            messages: messages,
+            messages: parseChatMessage(messages),
             functions: options === null || options === void 0 ? void 0 : options.functions,
             function_call: options === null || options === void 0 ? void 0 : options.functionCall,
             max_tokens: options === null || options === void 0 ? void 0 : options.maxTokens,
@@ -25609,6 +22992,86 @@ function _getChatCompletionsSendX(context, messages, deploymentName, options = {
         ? _getChatCompletionsWithAzureExtensionsSend(context, messages, deploymentName, Object.assign(Object.assign({}, options), { dataSources: (_b = options.azureExtensionOptions) === null || _b === void 0 ? void 0 : _b.extensions }))
         : _getChatCompletionsSend(context, messages, deploymentName, options);
 }
+// implementation
+async function getAudioTranslation(context, deploymentName, fileContent, formatOrOptions, inputOptions) {
+    const options = inputOptions !== null && inputOptions !== void 0 ? inputOptions : (typeof formatOrOptions === "string" ? {} : formatOrOptions !== null && formatOrOptions !== void 0 ? formatOrOptions : {});
+    const response_format = typeof formatOrOptions === "string" ? formatOrOptions : undefined;
+    const { temperature, prompt, model } = options, rest = tslib.__rest(options, ["temperature", "prompt", "model"]);
+    const { body, status } = await context
+        .pathUnchecked("deployments/{deploymentId}/audio/translations", deploymentName)
+        .post(Object.assign(Object.assign({ body: Object.assign(Object.assign(Object.assign(Object.assign({ file: createFile(fileContent) }, (response_format && { response_format })), (temperature !== undefined ? { temperature } : {})), (prompt && { prompt })), (model && { model })) }, rest), { contentType: "multipart/form-data" }));
+    if (status !== "200") {
+        throw body.error;
+    }
+    return response_format !== "verbose_json"
+        ? body
+        : renameKeysToCamelCase(body);
+}
+// implementation
+async function getAudioTranscription(context, deploymentName, fileContent, formatOrOptions, inputOptions) {
+    const options = inputOptions !== null && inputOptions !== void 0 ? inputOptions : (typeof formatOrOptions === "string" ? {} : formatOrOptions !== null && formatOrOptions !== void 0 ? formatOrOptions : {});
+    const response_format = typeof formatOrOptions === "string" ? formatOrOptions : undefined;
+    const { temperature, language, prompt, model } = options, rest = tslib.__rest(options, ["temperature", "language", "prompt", "model"]);
+    const { body, status } = await context
+        .pathUnchecked("deployments/{deploymentId}/audio/transcriptions", deploymentName)
+        .post(Object.assign(Object.assign({ body: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ file: createFile(fileContent) }, (response_format && { response_format })), (language && { language })), (temperature !== undefined ? { temperature } : {})), (prompt && { prompt })), (model && { model })) }, rest), { contentType: "multipart/form-data" }));
+    if (status !== "200") {
+        throw body.error;
+    }
+    return response_format !== "verbose_json"
+        ? body
+        : renameKeysToCamelCase(body);
+}
+function parseChatMessage(messages) {
+    return messages.map((p) => {
+        var _a;
+        return ({
+            role: p.role,
+            content: (_a = p.content) !== null && _a !== void 0 ? _a : null,
+            name: p.name,
+            function_call: p.functionCall,
+            context: p.context,
+        });
+    });
+}
+
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+function nonAzurePolicy() {
+    const policy = {
+        name: "openAiEndpoint",
+        sendRequest: (request, next) => {
+            const obj = new URL(request.url);
+            const parts = obj.pathname.split("/");
+            switch (parts[parts.length - 1]) {
+                case "completions":
+                    if (parts[parts.length - 2] === "chat") {
+                        obj.pathname = `${parts[1]}/chat/completions`;
+                    }
+                    else {
+                        obj.pathname = `${parts[1]}/completions`;
+                    }
+                    break;
+                case "embeddings":
+                    obj.pathname = `${parts[1]}/embeddings`;
+                    break;
+                case "generations:submit":
+                    obj.pathname = `${parts[1]}/images/generations`;
+                    break;
+                case "transcriptions":
+                    obj.pathname = `${parts[1]}/audio/transcriptions`;
+                    break;
+                case "translations":
+                    obj.pathname = `${parts[1]}/audio/translations`;
+                    break;
+            }
+            obj.searchParams.delete("api-version");
+            request.url = obj.toString();
+            return next(request);
+        },
+    };
+    return policy;
+}
 
 // Copyright (c) Microsoft Corporation.
 class OpenAIClient {
@@ -25640,10 +23103,12 @@ class OpenAIClient {
                     ...((_b = opts.additionalPolicies) !== null && _b !== void 0 ? _b : []),
                     {
                         position: "perCall",
-                        policy: getPolicy(),
+                        policy: nonAzurePolicy(),
                     },
                 ],
             })));
+        this._client.pipeline.removePolicy({ name: coreRestPipeline.formDataPolicyName });
+        this._client.pipeline.addPolicy(formDataWithFileUploadPolicy());
     }
     /**
      * Returns textual completions as configured for a given prompt.
@@ -25709,6 +23174,26 @@ class OpenAIClient {
     getImages(prompt, options = { requestOptions: {} }) {
         return getImages(this._client, prompt, options);
     }
+    // implementation
+    async getAudioTranscription(deploymentName, fileContent, formatOrOptions, inputOptions) {
+        const options = inputOptions !== null && inputOptions !== void 0 ? inputOptions : (typeof formatOrOptions === "string" ? {} : formatOrOptions !== null && formatOrOptions !== void 0 ? formatOrOptions : {});
+        const response_format = typeof formatOrOptions === "string" ? formatOrOptions : undefined;
+        this.setModel(deploymentName, options);
+        if (response_format === undefined) {
+            return getAudioTranscription(this._client, deploymentName, fileContent, options);
+        }
+        return getAudioTranscription(this._client, deploymentName, fileContent, response_format, options);
+    }
+    // implementation
+    async getAudioTranslation(deploymentName, fileContent, formatOrOptions, inputOptions) {
+        const options = inputOptions !== null && inputOptions !== void 0 ? inputOptions : (typeof formatOrOptions === "string" ? {} : formatOrOptions !== null && formatOrOptions !== void 0 ? formatOrOptions : {});
+        const response_format = typeof formatOrOptions === "string" ? formatOrOptions : undefined;
+        this.setModel(deploymentName, options);
+        if (response_format === undefined) {
+            return getAudioTranslation(this._client, deploymentName, fileContent, options);
+        }
+        return getAudioTranslation(this._client, deploymentName, fileContent, response_format, options);
+    }
     setModel(model, options) {
         if (!this._isAzure) {
             options.model = model;
@@ -25720,34 +23205,6 @@ function createOpenAIEndpoint(version) {
 }
 function isCred(cred) {
     return coreAuth.isTokenCredential(cred) || cred.key !== undefined;
-}
-function getPolicy() {
-    const policy = {
-        name: "openAiEndpoint",
-        sendRequest: (request, next) => {
-            const obj = new URL(request.url);
-            const parts = obj.pathname.split("/");
-            switch (parts[parts.length - 1]) {
-                case "completions":
-                    if (parts[parts.length - 2] === "chat") {
-                        obj.pathname = `/${parts[1]}/chat/completions`;
-                    }
-                    else {
-                        obj.pathname = `/${parts[1]}/completions`;
-                    }
-                    break;
-                case "embeddings":
-                    obj.pathname = `/${parts[1]}/embeddings`;
-                    break;
-                case "generations:submit":
-                    obj.pathname = `/${parts[1]}/images/generations`;
-            }
-            obj.searchParams.delete("api-version");
-            request.url = obj.toString();
-            return next(request);
-        },
-    };
-    return policy;
 }
 
 Object.defineProperty(exports, "AzureKeyCredential", ({
