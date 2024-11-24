@@ -10,7 +10,7 @@ inputs:
       Specifies the ChatGPT model to be used.
       ex) gpt-4, gpt-3.5, gpt-3.5-turbo
     required: false
-    default: gpt-3.5-turbo-16k
+    default: gpt-4o
   github-token:
     description: >
       Specify a GitHub token.
