@@ -35,7 +35,7 @@
     "@actions/exec": "^1.1.1",
     "@actions/github": "5.1.1",
     "@azure/openai": "^1.0.0-beta.6",
-    "@commitlint/cli": "19.3.0",
+    "@commitlint/cli": "19.6.1",
     "@commitlint/config-conventional": "19.6.0",
     "@types/node": "22.10.3",
     "@vercel/ncc": "0.38.3",
