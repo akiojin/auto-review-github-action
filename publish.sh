@@ -2,7 +2,7 @@
 
 if [ "$#" -ne 1 ] || [[ "$1" != "major" && "$1" != "minor" && "$1" != "patch" && "$1" != "prerelease" ]]; then
     echo "Usage:"
-    echo " ./publis.sh <major/minor/patch/prerelease>"
+    echo " ./publish.sh <major/minor/patch/prerelease>"
     echo "  or"
     echo " npm run release <major/minor/patch>"
     echo "  or"
@@ -10,17 +10,20 @@ if [ "$#" -ne 1 ] || [[ "$1" != "major" && "$1" != "minor" && "$1" != "patch" &&
     exit 1
 fi
 
-echo -n "Do you want to continue the update process? (Y/N): "
-read -n 1 ANSWER
-echo ""
-
-if [ "$ANSWER" != "Y" ] && [ "$ANSWER" != "y" ]; then
-  echo "Update process canceled."
+if [ -z "${GITHUB_TOKEN:-}" ]; then
+  echo "Error: Environment variable GITHUB_TOKEN is not set."
   exit 1
 fi
 
-npm run clean
-npm run build
+if ! npm run clean; then
+    echo "Error: Failed to clean the project."
+    exit 1
+fi
+
+if ! npm run build; then
+    echo "Error: Failed to build the project."
+    exit 1
+fi
 
 STATUS=$(git status --porcelain)
 
@@ -47,11 +50,18 @@ else
     VERSION=$(npm version prerelease --preid rc)
 fi
 
-git pull
+if ! git pull; then
+    echo "Error: Failed to pull the latest changes."
+    exit 1
+fi
+
 git add package.json package-lock.json
 git commit -m "bump: $VERSION"
 git push --follow-tags
 
 if [ "$1" != "prerelease" ]; then
-    gh pr create --base main --head develop --title "bump: $VERSION" --body "bump: $VERSION"
+    if ! gh pr create --base main --head develop --title "bump: $VERSION" --body "bump: $VERSION"; then
+        echo "Error: Failed to create a pull request."
+        exit 1
+    fi
 fi
