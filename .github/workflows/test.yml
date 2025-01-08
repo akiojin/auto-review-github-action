@@ -22,5 +22,5 @@ jobs:
       - uses: ./
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          target: 'ts,yml.json'
+          target: 'ts,yml,json'
           language: 日本語
