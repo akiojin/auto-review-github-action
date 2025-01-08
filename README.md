@@ -21,7 +21,7 @@ The pull request summary and suggestions for improvement will be posted in the p
   continue-on-error: true
   with:
     openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-    target: 'ts,yml.json'
+    target: 'ts,yml,json'
 ```
 
 In this example, the review is performed when there is an update to `*.ts` or `*.yml`.
