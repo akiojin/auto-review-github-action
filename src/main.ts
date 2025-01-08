@@ -5,7 +5,7 @@ import * as exec from '@actions/exec'
 import * as github from '@actions/github'
 import * as tmp from 'tmp'
 import * as fs from 'fs/promises'
-import { OpenAIClient, AzureKeyCredential, OpenAIKeyCredential, ChatMessage, GetChatCompletionsOptions } from "@azure/openai";
+import { OpenAI, AzureOpenAI } from 'openai'
 
 const IsOptimization = github.context.payload.action === 'synchronize' && core.getBooleanInput('optimize')
 const IsAzureOpenAI = !!core.getInput('resource-name')
@@ -83,16 +83,20 @@ async function GetAllFileDiff(extensions: string[]): Promise<string>
   return diff
 }
 
-function CreateOpenAIClient(resourceName?: string): OpenAIClient
+function CreateOpenAIClient(resourceName?: string): OpenAI
 {
   if (IsAzureOpenAI) {
     core.info('Use Azure OpenAI API.')
-    return new OpenAIClient(
-      `https://${resourceName}.openai.azure.com/`,
-      new AzureKeyCredential(core.getInput('openai-api-key')))
+    return new AzureOpenAI({
+      apiKey: core.getInput('openai-api-key'),
+      endpoint: `https://${resourceName}.openai.azure.com/`,
+      deployment: core.getInput('deployment-id')
+    })
   } else {
     core.info('Use OpenAI API.')
-    return new OpenAIClient(new OpenAIKeyCredential(core.getInput('openai-api-key')));
+    return new OpenAI({
+      apiKey: core.getInput('openai-api-key')
+    });
   }
 }
 
@@ -190,15 +194,16 @@ The following points must be observed in the explanation.
     core.endGroup()
 
     core.startGroup('OpenAI API Request')
-    const messages: ChatMessage[] = [
-      { role: 'system', content: system },
-      { role: 'user', content: diff }
-    ]
-
-    let options: GetChatCompletionsOptions = {}
+    let options: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: diff }
+      ],
+      model: core.getInput('model')
+    }
     
     if (core.getInput('max-tokens')) {
-      options.maxTokens = parseInt(core.getInput('max-tokens'))
+      options.max_tokens = parseInt(core.getInput('max-tokens'))
     }
 
     if (core.getInput('temperature')) {
@@ -206,12 +211,11 @@ The following points must be observed in the explanation.
     }
 
     if (core.getInput('top-p')) {
-      options.topP = parseFloat(core.getInput('top-p'))
+      options.top_p = parseFloat(core.getInput('top-p'))
     }
 
     core.info('GetChatCompletions')
-    const result = await client.getChatCompletions(
-      core.getInput('deployment-id') || core.getInput('model'), messages, options)
+    const result = await client.chat.completions.create(options)
 
     core.info('Response')
     const answer = result.choices[0].message?.content;

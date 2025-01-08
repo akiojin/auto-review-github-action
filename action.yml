@@ -8,7 +8,7 @@ inputs:
   model:
     description: >
       Specifies the ChatGPT model to be used.
-      ex) gpt-4, gpt-3.5, gpt-3.5-turbo
+      ex) gpt-4, gpt-4o, gpt-4o-mini
     required: false
     default: gpt-4o
   github-token:
