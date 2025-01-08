@@ -34,9 +34,7 @@
     "@actions/core": "1.11.1",
     "@actions/exec": "^1.1.1",
     "@actions/github": "6.0.0",
-    "@types/node": "22.10.5",
     "@vercel/ncc": "0.38.3",
-    "i": "0.3.7",
     "openai": "^4.77.3",
     "rimraf": "6.0.1",
     "typescript": "5.7.2"
