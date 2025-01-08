@@ -226,7 +226,7 @@ The following points must be observed in the explanation.
     core.info(`answer: \n${answer}`)
 
     const body = tmp.tmpNameSync()
-    await fs.writeFile(body, `${answer}\n\n **by ${IsAzureOpenAI ? 'Azure OpenAI' : 'OpenAI'}**`)
+    await fs.writeFile(body, `${answer}\n\n **by ${IsAzureOpenAI ? 'Azure OpenAI' : 'OpenAI'} (${core.getInput('model')})**`)
     core.endGroup()
 
     core.startGroup('GitHub CLI Comment')
