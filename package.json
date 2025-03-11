@@ -35,9 +35,9 @@
     "@actions/exec": "^1.1.1",
     "@actions/github": "6.0.0",
     "@vercel/ncc": "0.38.3",
-    "openai": "^4.82.0",
+    "openai": "^4.86.1",
     "rimraf": "6.0.1",
-    "typescript": "5.7.2"
+    "typescript": "5.8.2"
   },
   "private": true,
   "dependencies": {
