@@ -90,7 +90,8 @@ function CreateOpenAIClient(resourceName?: string): OpenAI
     return new AzureOpenAI({
       apiKey: core.getInput('openai-api-key'),
       endpoint: `https://${resourceName}.openai.azure.com/`,
-      deployment: core.getInput('deployment-id')
+      deployment: core.getInput('deployment-id'),
+      apiVersion: core.getInput('api-version')
     })
   } else {
     core.info('Use OpenAI API.')
