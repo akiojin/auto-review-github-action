@@ -75,6 +75,10 @@ inputs:
       ex) false
     required: true
     default: true
+  api-version:
+    description: >
+      When using Azure OpenAI, you must specify the API version to be used.
+    required: false
 outputs:
   output:
     description: >
