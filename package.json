@@ -1,6 +1,6 @@
 {
   "name": "@akiojin/auto-review-github-action",
-  "version": "2.1.21",
+  "version": "2.1.22",
   "description": "This action is an action that uses OpenAI to perform an auto-review.",
   "main": "dist/index.js",
   "scripts": {
@@ -35,7 +35,7 @@
     "@actions/exec": "^1.1.1",
     "@actions/github": "6.0.0",
     "@vercel/ncc": "0.38.3",
-    "openai": "^4.86.1",
+    "openai": "4.86.2",
     "rimraf": "6.0.1",
     "typescript": "5.8.2"
   },
