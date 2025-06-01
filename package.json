@@ -33,7 +33,7 @@
   "devDependencies": {
     "@actions/core": "1.11.1",
     "@actions/exec": "^1.1.1",
-    "@actions/github": "6.0.0",
+    "@actions/github": "6.0.1",
     "@vercel/ncc": "0.38.3",
     "openai": "4.91.0",
     "rimraf": "6.0.1",
